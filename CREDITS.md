@@ -22,3 +22,39 @@ Nhân vật là IP Disney, model do fan làm/rip game. Chỉ dùng chơi trong n
 | lanterns | Sky Lantern Pack | Bayboose | https://sketchfab.com/3d-models/976380999ca54737ae812e503de3f90b |
 | pascal | Pascal - Tangled (Disney) | Locur | https://sketchfab.com/3d-models/e094b3a705f94e91b7c869fa200a51a0 |
 | olaf | Olaf (Disney's Frozen) | elvinguhl | https://sketchfab.com/3d-models/1d59bf02df5044a88780e163fc90f7f8 |
+
+## Phòng Ariel (CC0, poly.pizza)
+
+| File | Tên model | Tác giả | Giấy phép | Link |
+|---|---|---|---|---|
+| rooms/ariel/chest.glb | Chest Closed | Quaternius | CC0 1.0 | https://poly.pizza/m/AngpV0HxD8 |
+
+## Phòng Lọ Lem (CC0, poly.pizza)
+
+| File | Tên model | Tác giả | Giấy phép | Link |
+|---|---|---|---|---|
+| rooms/cinderella/pumpkin.glb | Pumpkin | Quaternius | CC0 1.0 | https://poly.pizza/m/bvLvqnU1jX |
+
+## Phòng Jasmine (CC0, poly.pizza)
+
+| File | Tên model | Tác giả | Giấy phép | Link |
+|---|---|---|---|---|
+| rooms/jasmine/palm.glb | Palm Tree | Quaternius | CC0 1.0 | https://poly.pizza/m/DsrrAYmucG |
+
+## Phòng Merida (CC0, poly.pizza)
+
+| File | Tên model | Tác giả | Giấy phép | Link |
+|---|---|---|---|---|
+| rooms/merida/horse.glb | Horse | Quaternius | CC0 1.0 | https://poly.pizza/m/F8HAAcLeBL |
+| rooms/merida/bow.glb | Wooden Bow | Quaternius | CC0 1.0 | https://poly.pizza/m/QnpqjLSKFU |
+| rooms/merida/quiver.glb | Quiver | CreativeTrio | CC0 1.0 | https://poly.pizza/m/3PTJlHnOfU |
+| rooms/merida/mushroom.glb | Mushroom | Quaternius | CC0 1.0 | https://poly.pizza/m/db1tjMhmiA |
+
+## Phòng Tiana (CC0, poly.pizza)
+
+| File | Tên model | Tác giả | Giấy phép | Link |
+|---|---|---|---|---|
+| rooms/tiana/lilypad.glb | Lilypad | Quaternius | CC0 1.0 | https://poly.pizza/m/TI6ukUlsLh |
+| rooms/tiana/streetlight.glb | Street Light | Quaternius | CC0 1.0 | https://poly.pizza/m/nFwrlcLvM5 |
+| rooms/tiana/willow.glb | Willow | Quaternius | CC0 1.0 | https://poly.pizza/m/mBrUbIp9Zd |
+| rooms/tiana/donut.glb | Donut Sprinkles | Kenney | CC0 1.0 | https://poly.pizza/m/RnPNAFyKtY |

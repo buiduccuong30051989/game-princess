@@ -55,11 +55,12 @@ export class PrincessActor {
     // xoay mặt ra +z TRƯỚC khi fit (fit căn tâm theo bbox sau xoay)
     const holder = new THREE.Group();
     holder.add(obj);
-    fitHeight(obj, this.height);
-    this.poser = new Poser(obj, this.spec.tuning);
+    // ẩn xương (cung tên Merida…) TRƯỚC khi fit, không thì bbox tính cả cung → công chúa lơ lửng trên bệ
     if (this.spec.hideBones?.length) {
       obj.traverse((o) => { if ((o as THREE.Bone).isBone && this.spec.hideBones!.includes(normBone(o.name))) o.scale.setScalar(1e-4); });
     }
+    fitHeight(obj, this.height);
+    this.poser = new Poser(obj, this.spec.tuning);
     holder.rotation.y = -this.poser.facingYaw + (this.spec.yawOffset ?? 0);
     this.body.add(holder);
     this.model = holder;

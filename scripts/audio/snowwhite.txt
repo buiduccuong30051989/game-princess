@@ -1,5 +1,5 @@
-# TODO(room-agent): audio tạm cho phòng Bạch Tuyết (thay khi làm phòng thật). key|text, giọng Linh macOS.
-snowwhite_name|Rừng táo của Bạch Tuyết!
-snowwhite_intro|Đây là rừng táo của Bạch Tuyết. Ôi, công chúa Bạch Tuyết bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
-snowwhite_thanks|Cảm ơn Hà An! Tớ là Bạch Tuyết. Hà An giỏi quá!
-snowwhite_count|Có mấy quả táo? Chạm từng cái để đếm nhé.
+# Phòng Bạch Tuyết. key|text – giọng Linh macOS. Từ vựng (ask_/name_/token) KHÔNG viết ở đây: tự sinh từ src/rooms/snowwhite.ts.
+snowwhite_name|Ngôi nhà nhỏ của Bạch Tuyết!
+snowwhite_intro|Đây là ngôi nhà nhỏ trong rừng của công chúa Bạch Tuyết. Ôi, Bạch Tuyết bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+snowwhite_thanks|Cảm ơn Hà An đã cứu tớ! Tớ là Bạch Tuyết. Mình cùng đi hái táo với các bạn chim nhé!
+snowwhite_count|Có mấy quả táo? Chạm từng quả để đếm nhé.

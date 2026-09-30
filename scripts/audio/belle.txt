@@ -1,5 +1,5 @@
-# TODO(room-agent): audio tạm cho phòng Belle (thay khi làm phòng thật). key|text, giọng Linh macOS.
+# Phòng Belle – Thư viện phép thuật. key|text – giọng Linh macOS. Từ vựng (ask_/name_/token) KHÔNG viết ở đây: tự sinh từ src/rooms/belle.ts.
 belle_name|Thư viện của Belle!
-belle_intro|Đây là thư viện của Belle. Ôi, công chúa Belle bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
-belle_thanks|Cảm ơn Hà An! Tớ là Belle. Hà An giỏi quá!
-belle_count|Có mấy bông hồng? Chạm từng cái để đếm nhé.
+belle_intro|Đây là thư viện phép thuật của công chúa Belle. Ôi, Belle bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+belle_thanks|Cảm ơn Hà An đã cứu tớ! Tớ là Belle. Mình cùng đọc truyện cổ tích nhé!
+belle_count|Có mấy bông hồng? Chạm từng bông để đếm nhé.

@@ -19,6 +19,8 @@ class Aborted extends Error {}
 export class Challenge {
   private used = new Set<string>();
   private repeatFn: (() => void) | null = null;
+  /** đáp án đúng của câu đang hỏi (data-value của nút) – chỉ để test/soát, null khi không có câu chọn */
+  current: string | null = null;
   private aborted = false;
   private skipResolve: (() => void) | null = null;
   private readonly onRepeat = () => this.repeatFn?.();
@@ -95,6 +97,7 @@ export class Challenge {
     let busy = false;
     const ask = () => speakSequence(askKeys, undefined, 150);
     this.repeatFn = () => void ask();
+    this.current = target;
     return new Promise((resolve) => {
       const buttons = showOptions(items, async (value, btn) => {
         if (this.aborted) return;
@@ -119,6 +122,7 @@ export class Challenge {
         buttons.forEach((b) => { b.classList.remove('hint'); if (b !== btn) b.classList.add('gone'); });
         btn.classList.add('correct');
         sfx('sfx_win', 0.5);
+        this.current = null;
         resolve();
       });
       void ask();

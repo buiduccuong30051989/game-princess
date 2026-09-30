@@ -1,5 +1,5 @@
-# TODO(room-agent): audio tạm cho phòng Mộc Lan (thay khi làm phòng thật). key|text, giọng Linh macOS.
-mulan_name|Vườn của Mộc Lan!
-mulan_intro|Đây là vườn của Mộc Lan. Ôi, Mộc Lan bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
-mulan_thanks|Cảm ơn Hà An! Tớ là Mộc Lan. Hà An giỏi quá!
-mulan_count|Có mấy chiếc đèn lồng? Chạm từng cái để đếm nhé.
+# Phòng Mộc Lan (vườn hoa đào). key|text – giọng Linh macOS. Từ vựng (ask_/name_/token) KHÔNG viết ở đây: tự sinh từ src/rooms/mulan.ts.
+mulan_name|Vườn hoa đào của Mộc Lan!
+mulan_intro|Đây là vườn hoa đào của công chúa Mộc Lan. Ôi, Mộc Lan bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+mulan_thanks|Cảm ơn Hà An đã cứu tớ! Tớ là Mộc Lan. Hà An dũng cảm lắm!
+mulan_count|Có mấy bông hoa đào? Chạm từng bông để đếm nhé.

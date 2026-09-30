@@ -9,7 +9,8 @@ export const PRINCESS_MODELS: PrincessModelInfo[] = [
   { model: 'p_belle.glb', rig: 'lores', tuning: { armOut: 0.3 } },
   { model: 'p_cinderella.glb', rig: 'lores', tuning: { armOut: 0.3 } },
   { model: 'p_jasmine.glb', rig: 'lores', tuning: { armOut: 0.3 } },
-  { model: 'p_snowwhite.glb', rig: 'lores', tuning: { armOut: 0.3 } },
+  // Bạch Tuyết: tay áo phồng + thân áo rộng, armOut 0.3 thì cẳng tay chìm hẳn vào váy (soát 30/09)
+  { model: 'p_snowwhite.glb', rig: 'lores', tuning: { armOut: 0.55, armForward: 0.18 } },
   { model: 'p_anna.glb', rig: 'lores', tuning: { armOut: 0.3 } },
   { model: 'p_aurora.glb', rig: 'hires', tuning: { armOut: 0.3 } },
   { model: 'p_mulan.glb', rig: 'hires', tuning: { armOut: 0.3 }, hide: ['MulanSword_Texture'] },
