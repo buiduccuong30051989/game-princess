@@ -1,0 +1,125 @@
+# key|text  (giọng Linh macOS; thay file cùng tên bằng giọng ba mẹ nếu muốn)
+# --- dẫn chuyện
+intro|Hà An ơi! Hôm nay mình hoá thân thành công chúa nào?
+pick_elsa|Công chúa Elsa! Nữ hoàng băng giá!
+pick_rapunzel|Công chúa Rapunzel!
+pick_ariel|Nàng tiên cá Ariel!
+locked|Món này chưa mở đâu. Hoá thân Elsa xong rồi mình mở tiếp nhé!
+wardrobe_hint|Chạm vào ô dấu hỏi để mở món đồ của Elsa nhé.
+challenge_start|Trả lời đúng để nhận món đồ nào!
+got_item|Được rồi!
+transform|Hà An đã hoá thân thành công chúa Elsa rồi! Tuyệt vời!
+tap_magic|Chạm vào đũa phép để làm phép nhé.
+magic_elsa|Băng tuyết ơi, hãy đến đây!
+all_done|Hà An là công chúa Elsa rồi! Giỏi quá!
+right|Đúng rồi!
+good|Giỏi lắm!
+yay|Tuyệt vời!
+retry|Thử lại nhé!
+almost|Gần đúng rồi, thử lại nào!
+hint_last|Chạm vào cái đang nhấp nháy nhé.
+ask_count|Có mấy viên ngọc băng? Chạm từng viên để đếm nhé.
+ask_pick_number|Có mấy viên ngọc? Chạm vào số đúng nhé.
+ask_fill|Chữ nào còn thiếu? Chạm vào chữ đúng nhé.
+# --- món đồ Elsa
+item_elsa_hair|Tóc bím của Elsa!
+item_elsa_dress|Váy băng lấp lánh!
+item_elsa_crown|Vương miện băng!
+item_elsa_wand|Đũa phép tuyết!
+item_elsa_olaf|Bạn Olaf!
+item_elsa_slipper|Đôi giày pha lê!
+# --- câu hỏi + tên
+ask_vay|Cái nào là cái váy?
+ask_giay|Cái nào là đôi giày?
+ask_hoa|Cái nào là bông hoa?
+ask_sao|Cái nào là ngôi sao?
+ask_so|Cái nào là con sò?
+ask_bang|Cái nào là băng?
+ask_ca|Con nào là con cá?
+ask_meo|Con nào là con mèo?
+ask_ga|Con nào là con gà?
+ask_bo|Con nào là con bò?
+ask_cho|Con nào là con chó?
+ask_tho|Con nào là con thỏ?
+name_vay|cái váy
+name_giay|đôi giày
+name_hoa|bông hoa
+name_sao|ngôi sao
+name_so|con sò
+name_bang|băng
+name_ca|con cá
+name_meo|con mèo
+name_ga|con gà
+name_bo|con bò
+name_cho|con chó
+name_tho|con thỏ
+# --- token đánh vần
+v_a|a
+v_y|y
+v_o|o
+v_e|e
+v_ay|ay
+v_oa|oa
+v_ao|ao
+v_eo|eo
+v_abreve|ă
+v_ang|ăng
+c_vo|vờ
+c_gio|giờ
+c_ho|hờ
+c_so|sờ
+c_ngo|ngờ
+c_bo|bờ
+c_co|cờ
+c_mo|mờ
+c_go|gờ
+c_cho|chờ
+c_tho|thờ
+s_vay|vay
+s_giay|giay
+s_so|so
+s_ca|ca
+s_meo|meo
+s_ga|ga
+s_bo|bo
+s_cho|cho
+s_tho|tho
+t_sac|sắc
+t_huyen|huyền
+t_hoi|hỏi
+w_vay|váy
+w_giay|giày
+w_hoa|hoa
+w_sao|sao
+w_so|sò
+w_bang|băng
+w_ca|cá
+w_meo|mèo
+w_ga|gà
+w_bo|bò
+w_cho|chó
+w_tho|thỏ
+# --- chữ cái (đọc tên âm khi bé chạm nút chữ)
+l_v|vờ
+l_b|bờ
+l_m|mờ
+l_h|hờ
+l_t|tờ
+l_s|sờ
+l_c|cờ
+l_g|gờ
+l_k|ca
+l_n|nờ
+l_d|dờ
+l_l|lờ
+# --- số
+n1|một
+n2|hai
+n3|ba
+n4|bốn
+n5|năm
+n6|sáu
+n7|bảy
+n8|tám
+n9|chín
+n10|mười
