@@ -60,6 +60,7 @@ new GLTFLoader().load(url, (gltf) => {
     info.textContent += ` | playing ${gltf.animations[Number(animIdx)].name}`;
   }
   (window as any).__ready = true;
+  (window as any).__v = { obj, gltf, scene, camera, renderer, THREE };
 }, undefined, (e) => { info.textContent = 'ERR ' + String(e); (window as any).__ready = 'err'; });
 
 const clock = new THREE.Clock();

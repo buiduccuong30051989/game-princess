@@ -1,0 +1,5 @@
+# TODO(room-agent): audio tạm cho phòng Jasmine (thay khi làm phòng thật). key|text, giọng Linh macOS.
+jasmine_name|Cung điện của Jasmine!
+jasmine_intro|Đây là cung điện của Jasmine. Ôi, công chúa Jasmine bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+jasmine_thanks|Cảm ơn Hà An! Tớ là Jasmine. Hà An giỏi quá!
+jasmine_count|Có mấy cây đèn thần? Chạm từng cái để đếm nhé.

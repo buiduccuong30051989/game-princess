@@ -42,7 +42,7 @@ export class Magic {
   private readonly geo: THREE.BufferGeometry;
   private readonly tmp = new THREE.Color();
 
-  constructor(scene: THREE.Scene, pointScale = 260, blending: THREE.Blending = THREE.AdditiveBlending) {
+  constructor(scene: THREE.Scene | null, pointScale = 260, blending: THREE.Blending = THREE.AdditiveBlending) {
     this.pos = new Float32Array(this.max * 3);
     this.col = new Float32Array(this.max * 3);
     this.size = new Float32Array(this.max);
@@ -59,7 +59,24 @@ export class Magic {
     });
     this.points = new THREE.Points(this.geo, mat);
     this.points.frustumCulled = false;
+    this.points.renderOrder = 10;
+    scene?.add(this.points);
+  }
+
+  /** Chuyển hạt sang scene khác (đổi màn), xoá hạt cũ. */
+  attach(scene: THREE.Scene): void {
     scene.add(this.points);
+    this.clear();
+  }
+
+  clear(): void {
+    this.parts.length = 0;
+    this.geo.setDrawRange(0, 0);
+  }
+
+  /** Kích thước hạt theo chiều cao drawing buffer (giữ cỡ hạt như nhau ở mọi màn hình / DPR). */
+  setPointScale(v: number): void {
+    (this.points.material as THREE.ShaderMaterial).uniforms.uScale.value = v;
   }
 
   emit(p: Partial<Particle> & { x: number; y: number; z: number; color: number }): void {
@@ -75,12 +92,14 @@ export class Magic {
   }
 
   /** Nổ toé ra mọi hướng. */
-  burst(at: THREE.Vector3, n: number, color: number, speed = 2.6, size = 0.32, life = 0.9, gravity = -2.5): void {
+  burst(at: THREE.Vector3, n: number, color: number, speed = 2.6, size = 0.32, life = 0.9, gravity = -2.5, spawn = 0.35): void {
     for (let i = 0; i < n; i++) {
       const th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
       const s = speed * (0.4 + Math.random() * 0.8);
+      // xuất phát rải trong quả cầu nhỏ: tránh cục đặc màu ở tâm trong vài frame đầu
+      const j = spawn * Math.cbrt(Math.random());
       this.emit({
-        x: at.x, y: at.y, z: at.z, color,
+        x: at.x + Math.sin(ph) * Math.cos(th) * j, y: at.y + Math.cos(ph) * j, z: at.z + Math.sin(ph) * Math.sin(th) * j, color,
         vx: Math.sin(ph) * Math.cos(th) * s, vy: Math.cos(ph) * s + speed * 0.4, vz: Math.sin(ph) * Math.sin(th) * s,
         max: life * (0.6 + Math.random() * 0.8), size: size * (0.6 + Math.random() * 0.9), gravity, drag: 0.92,
       });
@@ -106,8 +125,8 @@ export class Magic {
   }
 
   /** Tia phép bay theo đường cong từ `from` tới `to`, rắc hạt dọc đường. Resolve khi chạm đích. */
-  beam(from: THREE.Vector3, to: THREE.Vector3, color: number, color2: number, duration = 0.9): Promise<void> {
-    const ctrl = from.clone().lerp(to, 0.5).add(new THREE.Vector3(0, 2.2, 0));
+  beam(from: THREE.Vector3, to: THREE.Vector3, color: number, color2: number, duration = 0.9, arc = 2.2, size = 1): Promise<void> {
+    const ctrl = from.clone().lerp(to, 0.5).add(new THREE.Vector3(0, arc, 0));
     const curve = new THREE.QuadraticBezierCurve3(from.clone(), ctrl, to.clone());
     const start = performance.now();
     return new Promise((resolve) => {
@@ -119,7 +138,7 @@ export class Magic {
           this.emit({
             x: p.x + Math.cos(spiral) * 0.22, y: p.y + Math.sin(spiral) * 0.22, z: p.z + (Math.random() - 0.5) * 0.2,
             color: i % 2 ? color : color2, vx: (Math.random() - 0.5) * 0.6, vy: (Math.random() - 0.3) * 0.6,
-            max: 0.55 + Math.random() * 0.4, size: 0.24 + Math.random() * 0.2, drag: 0.95,
+            max: 0.7 + Math.random() * 0.5, size: (0.3 + Math.random() * 0.25) * size, drag: 0.95,
           });
         }
         if (t < 1) requestAnimationFrame(tick); else resolve();

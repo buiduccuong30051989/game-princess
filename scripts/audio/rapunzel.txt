@@ -1,0 +1,5 @@
+# Phòng Rapunzel (mẫu). key|text – giọng Linh macOS. Từ vựng (ask_/name_/token) KHÔNG viết ở đây: tự sinh từ src/rooms/rapunzel.ts.
+rapunzel_name|Tòa tháp của Rapunzel!
+rapunzel_intro|Đây là tòa tháp của công chúa Rapunzel. Ôi, Rapunzel bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+rapunzel_thanks|Cảm ơn Hà An nhé! Tớ là Rapunzel. Tối nay mình cùng ngắm đèn lồng bay lên trời nhé!
+rapunzel_count|Có mấy chiếc đèn lồng? Chạm từng chiếc để đếm nhé.

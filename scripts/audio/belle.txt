@@ -1,0 +1,5 @@
+# TODO(room-agent): audio tạm cho phòng Belle (thay khi làm phòng thật). key|text, giọng Linh macOS.
+belle_name|Thư viện của Belle!
+belle_intro|Đây là thư viện của Belle. Ôi, công chúa Belle bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+belle_thanks|Cảm ơn Hà An! Tớ là Belle. Hà An giỏi quá!
+belle_count|Có mấy bông hồng? Chạm từng cái để đếm nhé.

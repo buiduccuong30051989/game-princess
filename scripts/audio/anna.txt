@@ -1,0 +1,5 @@
+# TODO(room-agent): audio tạm cho phòng Anna (thay khi làm phòng thật). key|text, giọng Linh macOS.
+anna_name|Phòng tuyết của Anna!
+anna_intro|Đây là phòng tuyết của Anna. Ôi, công chúa Anna bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+anna_thanks|Cảm ơn Hà An! Tớ là Anna. Hà An giỏi quá!
+anna_count|Có mấy người tuyết? Chạm từng cái để đếm nhé.

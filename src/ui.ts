@@ -1,18 +1,15 @@
-// UI DOM: màn chọn công chúa, tủ đồ 6 ô, bảng thử thách, nút phép, pháo giấy.
-import { PRINCESSES, type ItemDef } from './data';
-
+// UI DOM: HUD, bảng thử thách, nút lớn, băng rôn tên phòng, pháo giấy, lớp băng mép màn.
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
 
 export const els = {
   start: $('#start'),
-  startBtn: $('#start-btn'),
-  pick: $('#pick'),
-  pickCards: $('#pick-cards'),
+  startBtn: $<HTMLButtonElement>('#start-btn'),
   hud: $('#hud'),
-  progress: $('#progress'),
-  back: $<HTMLButtonElement>('#back'),
-  wardrobe: $('#wardrobe'),
-  magic: $<HTMLButtonElement>('#magic'),
+  home: $<HTMLButtonElement>('#home'),
+  say: $<HTMLButtonElement>('#say'),
+  stars: $('#stars'),
+  banner: $('#banner'),
+  frost: $('#frost'),
   panel: $('#panel'),
   repeat: $<HTMLButtonElement>('#repeat'),
   word: $('#word'),
@@ -20,53 +17,36 @@ export const els = {
   counter: $('#counter'),
   gemrow: $('#gemrow'),
   options: $('#options'),
+  actions: $('#actions'),
+  btnHall: $<HTMLButtonElement>('#btn-hall'),
+  btnAgain: $<HTMLButtonElement>('#btn-again'),
   toast: $('#toast'),
   confetti: $('#confetti'),
+  fade: $('#fade'),
+  debug: $('#debug'),
 };
 
-export function showPick(done: string[], onPick: (id: string) => void): void {
-  els.pickCards.innerHTML = '';
-  for (const p of PRINCESSES) {
-    const b = document.createElement('button');
-    b.className = 'card' + (p.playable ? '' : ' locked') + (done.includes(p.id) ? ' done' : '');
-    b.innerHTML = `<span class="card-emoji">${p.emoji}</span><span class="card-name">${p.name}</span>`;
-    b.addEventListener('click', () => onPick(p.id));
-    els.pickCards.appendChild(b);
-  }
-  els.pick.hidden = false;
-  els.pick.classList.remove('hide');
-  els.hud.hidden = true;
-  els.wardrobe.hidden = true;
-  els.magic.hidden = true;
-}
-export function hidePick(): void {
-  els.pick.classList.add('hide');
-  setTimeout(() => (els.pick.hidden = true), 450);
+export function setStars(n: number, total: number, bump = false): void {
+  els.stars.textContent = `⭐ ${n}/${total}`;
+  if (bump) { els.stars.classList.remove('bump'); void els.stars.offsetWidth; els.stars.classList.add('bump'); }
 }
 
-/** Tủ đồ: ô đã mở hiện emoji món, chưa mở là ❓; ô đang mở nhấp nháy. */
-export function renderWardrobe(items: ItemDef[], owned: string[], onTap: (item: ItemDef) => void): void {
-  els.wardrobe.innerHTML = '';
-  for (const it of items) {
-    const b = document.createElement('button');
-    const has = owned.includes(it.id);
-    b.className = 'slot' + (has ? ' owned' : '');
-    b.textContent = has ? it.emoji : '❓';
-    b.dataset.id = it.id;
-    b.addEventListener('click', () => onTap(it));
-    els.wardrobe.appendChild(b);
-  }
-  els.wardrobe.hidden = false;
+/** HUD: home = hiện nút về sảnh (trong phòng). */
+export function showHud(home: boolean): void {
   els.hud.hidden = false;
-  els.progress.textContent = `${owned.length}/${items.length}`;
+  els.home.style.visibility = home ? 'visible' : 'hidden';
 }
-export function markSlot(id: string, emoji: string): void {
-  const b = els.wardrobe.querySelector<HTMLButtonElement>(`[data-id="${id}"]`);
-  if (b) { b.textContent = emoji; b.classList.add('owned', 'pop'); }
+
+let bannerTimer = 0;
+export function banner(text: string, ms = 2600): void {
+  els.banner.textContent = text;
+  els.banner.classList.add('show');
+  clearTimeout(bannerTimer);
+  bannerTimer = window.setTimeout(() => els.banner.classList.remove('show'), ms);
 }
-export function setBusySlot(id: string | null): void {
-  els.wardrobe.querySelectorAll('.slot').forEach((s) => s.classList.toggle('busy', (s as HTMLElement).dataset.id === id));
-}
+
+/** Lớp băng mép màn (0..1). */
+export function setFrost(k: number): void { els.frost.style.opacity = String(Math.max(0, Math.min(1, k))); }
 
 export function showPanel(v: boolean): void {
   els.panel.hidden = !v;
@@ -87,7 +67,7 @@ export function showWord(word: string, lit: number[] = [], whole = false, blank 
   w.innerHTML = '';
   Array.from(word).forEach((ch, i) => {
     const s = document.createElement('span');
-    s.textContent = i === blank ? '_' : ch;
+    s.textContent = i === blank ? '?' : ch;
     s.className = (lit.includes(i) ? 'lit' : '') + (i === blank ? ' blank' : '');
     w.appendChild(s);
   });
@@ -119,13 +99,13 @@ export function showOptions(items: Option[], onPick: (value: string, btn: HTMLBu
 }
 export function clearOptions(): void { els.options.innerHTML = ''; }
 
-export function showGemRow(n: number, onTap: (btn: HTMLButtonElement, index: number) => void): void {
+export function showGemRow(n: number, emoji: string, onTap: (btn: HTMLButtonElement, index: number) => void): void {
   els.gemrow.innerHTML = '';
   els.gemrow.hidden = false;
   for (let i = 0; i < n; i++) {
     const b = document.createElement('button');
     b.className = 'gem';
-    b.textContent = '💎';
+    b.textContent = emoji;
     b.addEventListener('click', () => onTap(b, i));
     els.gemrow.appendChild(b);
   }
@@ -145,16 +125,38 @@ export function toast(text: string, ms = 1400): void {
   toastTimer = window.setTimeout(() => els.toast.classList.remove('show'), ms);
 }
 
-const CONFETTI_COLORS = ['#a7e8ff', '#ff7ac8', '#ffd166', '#c084fc', '#ffffff', '#7fd8ff'];
-export function confetti(count = 60): void {
+/** Nút lớn cuối phòng. */
+export function showActions(hall: boolean, again: boolean): void {
+  els.actions.hidden = !(hall || again);
+  els.btnHall.hidden = !hall;
+  els.btnAgain.hidden = !again;
+}
+
+const CONFETTI_COLORS = ['#7fd8ff', '#ff5fb4', '#ffc233', '#a78bfa', '#ffffff', '#58cc02', '#ff8a3d'];
+export function confetti(count = 60, colors = CONFETTI_COLORS): void {
   for (let i = 0; i < count; i++) {
     const p = document.createElement('i');
     p.style.left = `${Math.random() * 100}%`;
-    p.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
-    p.style.animationDelay = `${Math.random() * 0.4}s`;
-    p.style.animationDuration = `${1.4 + Math.random() * 0.8}s`;
+    p.style.background = colors[i % colors.length];
+    p.style.animationDelay = `${Math.random() * 0.5}s`;
+    p.style.animationDuration = `${1.5 + Math.random() * 1}s`;
     p.style.transform = `rotate(${Math.random() * 360}deg)`;
     els.confetti.appendChild(p);
-    setTimeout(() => p.remove(), 2600);
+    setTimeout(() => p.remove(), 3200);
+  }
+}
+
+/** Sao lấp lánh trang trí màn bắt đầu. */
+export function startSparkles(): void {
+  const box = els.start.querySelector('.sparkles')!;
+  const icons = ['✨', '❄️', '⭐', '💎', '👑', '🌸'];
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement('i');
+    s.textContent = icons[i % icons.length];
+    s.style.left = `${Math.random() * 96}%`;
+    s.style.top = `${Math.random() * 92}%`;
+    s.style.fontSize = `${22 + Math.random() * 30}px`;
+    s.style.animationDelay = `${Math.random() * 2.4}s`;
+    box.appendChild(s);
   }
 }

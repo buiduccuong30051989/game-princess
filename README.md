@@ -1,51 +1,48 @@
-# Tủ đồ công chúa của Hà An (dự án 3: Three.js dress-up + học)
+# Lâu đài công chúa của Hà An (game 3, Three.js)
 
-Hà An đứng trong phòng gương trên bệ xoay. Tủ đồ 6 ô, mỗi ô là 1 bài đánh vần / điền chữ / đếm. Đúng thì nhận 1 món của Elsa (tóc bím, váy băng, vương miện, đũa phép, Olaf, giày pha lê). Đủ 6 món thì hoá thân thành Elsa (model có animation thật), bấm 🪄 để làm phép băng tuyết. Plan: `PLAN.md`, kho asset: `ASSETS.md`, ghi công: `CREDITS.md`.
+Lâu đài bị phép ngủ: 11 công chúa đóng băng thành tượng trong phòng của mình. Elsa (nhân vật có animation thật) dẫn bé đi từng phòng; mỗi phòng 3 bài (nghe – chọn hình, điền chữ thiếu, đếm) theo đánh vần GDPT 2018. Mỗi câu đúng Elsa làm phép, băng tan 1/3; câu 3 băng vỡ, công chúa tỉnh, nhún chào, vẫy, cảm ơn rồi về đứng trên bệ ở Đại sảnh. Cứu 3/6/9/11 mở dạ hội mini; 11 là đại dạ hội, Elsa thay váy băng Frozen 1. Thiết kế: `PLAN.md`. Ghi công model: `CREDITS.md`.
 
 ## Chạy
 
 ```bash
 pnpm install
-pnpm dev        # http://localhost:5173 (thêm --host để mở trên iPad cùng Wi-Fi)
+pnpm dev                     # http://localhost:5182 (--host sẵn: mở được trên iPad cùng Wi-Fi)
 pnpm build
-pnpm audio      # sinh lại 118 clip từ scripts/audio-manifest.txt (macOS, giọng Linh)
+bash scripts/gen-audio.sh    # sinh clip còn thiếu (macOS, giọng Linh); FORCE=1 sinh lại hết
+node scripts/word-audio.mjs --check   # soát hợp đồng + từ vựng 11 phòng
 ```
 
-Xem model lẻ: `/viewer.html?model=models/elsa_anim.glb&yaw=3.14&anim=13` (anim = chỉ số clip).
-
-## Luồng chơi
-
-1. Chạm 👑 bắt đầu → chọn công chúa (Elsa mở, Rapunzel/Ariel khoá, bấm vào thì nghe "chưa mở").
-2. Phòng gương: Hà An giữa bệ, tủ đồ 6 ô ❓ dưới màn. Chạm ô → bảng thử thách:
-   - **A1** nghe "Cái nào là cái váy?" → 3 hình.
-   - **A2** hình + chữ có ô trống (`_áy`) → 3 nút chữ cái, đúng thì đánh vần đủ (a – y – ay – vờ – ay – vay – sắc – váy).
-   - **B1** đếm ngọc băng → chọn số.
-   - Sai lần 1 bỏ 1 đáp án, sai lần 2 đáp án đúng nhấp nháy. Không bao giờ kẹt.
-3. Đúng → sao xoáy, món hiện ra (tóc/vương miện/đũa gắn lên người theo xương; váy/giày lên bệ phụ; Olaf đứng sàn). 6/6 → hoá thân: Hà An mờ đi, Elsa hiện ra, chơi clip `level_win_01` rồi idle.
-4. 🪄 → clip `level_powerup_triggered` + vòng băng + bụi băng + tuyết rơi. 🔄 về màn chọn. Tiến độ lưu localStorage (`princess-progress`).
+Debug: `?room=<id>&debug=1[&melt=1|2][&wake=1]`, `?saved=N`, `?ball=3|6|9|11`, `?reset=1`, `/lab.html?state=rest|wave|curtsy|open|cheer|twirl|frozen` (12 tượng), `/viewer.html?model=models/<f>.glb`. Chi tiết + cách làm phòng mới: **`docs/ROOM-GUIDE.md`**.
 
 ## Cấu trúc
 
 ```
-index.html        UI DOM: thẻ chọn công chúa, HUD, tủ đồ, bảng thử thách, nút phép, pháo giấy
-src/main.ts       điều phối: chọn → tủ đồ → thử thách → nhận đồ → hoá thân → phép; lưu tiến độ
-src/room.ts       Three.js: camera cố định, phòng (sàn ô, tường gradient, 2 gương khung vàng, rèm, đèn chùm), bệ xoay, loader GLB (metalness 0), emoji sprite, lấp lánh nền
-src/avatar.ts     Hà An (Quaternius, Idle, đầu chibi), gắn đồ theo xương (Head/RightHand) hoặc bệ, vương miện dựng khối, hoá thân (fade + swap model + bỏ track position + neo hông về giữa bệ), playOnce clip
-src/challenge.ts  A1 / A2 / B1 (tái dùng từ game 2, thêm A2)
-src/ui.ts, src/magic.ts (hạt, NormalBlending cho nền sáng), src/audio.ts, src/tween.ts
-src/data.ts       palette, 12 từ + token + ô trống, Elsa + 6 món (model, chiều cao, cách gắn), Rapunzel/Ariel khoá
-public/models/    18 GLB Sketchfab (CC BY, IP Disney, chỉ chơi trong nhà) + haan.glb (CC0) + vài cây Kenney
+src/main.ts            điều phối: màn chào → Đại sảnh ↔ Phòng; lưu tiến độ
+src/core/engine.ts     renderer, vòng lặp, đổi màn có mờ dần, chạm 3D, hạt phép dùng chung
+src/core/assets.ts     tải GLB (cache), clone có xương, metalness 0, fitHeight, emoji sprite
+src/core/progress.ts   localStorage 'castle-progress-v1', thứ tự mở cửa, mốc dạ hội
+src/core/params.ts     tham số URL debug
+src/hall.ts            Đại sảnh: 11 bệ móng ngựa + cửa + sân khấu Elsa, dạ hội, finale
+src/room/RoomScene.ts  khung phòng: bệ, tượng băng, Elsa, ánh sáng, luồng 3 bài → tỉnh; thanh debug
+src/room/types.ts      HỢP ĐỒNG PHÒNG (RoomDef, RoomCtx, RoomWord)
+src/room/kit.ts        bộ đồ nghề dựng cảnh (tường, cửa vòm khoét, thảm, kệ, tranh, nến, đèn lồng…)
+src/room/words.ts      từ vựng → token đánh vần + audio key + soát lỗi (node-safe)
+src/rooms/<id>.ts      11 phòng (rapunzel = mẫu, 10 phòng còn lại đang là khung tạm _stub.ts)
+src/rooms/princesses.ts  bảng 12 model tượng + tinh chỉnh tư thế / đồ thừa cần giấu
+src/spell.ts           đánh vần GDPT 2018 tự động (âm đầu – vần – tiếng – thanh), chạy cả trong node
+src/pose.ts            tạo dáng theo xương cho 12 tượng (hạ tay, thở, vẫy, nhún chào, dang tay, mừng, nhìn)
+src/ice.ts             material băng (fresnel, nứt, lấp lánh) tan 3 nấc từ đầu xuống, pha lê chân, vỡ tung
+src/princess.ts        PrincessActor = model + Poser + Ice + chuỗi tỉnh dậy
+src/elsa.ts            Elsa dẫn đường (elsa_anim.glb, bỏ track position + neo hông)
+src/challenge.ts       A1 / A2 / B1, sai 1 bỏ 1 đáp án, sai 2 nhấp nháy đáp án đúng
+src/audio.ts           WebAudio (mở khoá iPad, play luôn resolve), hộp nhạc tổng hợp (valse dạ hội)
+scripts/audio-manifest.txt  câu dùng chung; scripts/audio/<id>.txt câu riêng phòng; _words.gen.txt tự sinh
 ```
 
-## Bẫy đã dính (để khỏi dính lại)
+## Bẫy đã dính
 
-- Rig game (Elsa Frozen Free Fall) có root motion + gốc lệch tâm: phải bỏ mọi track `.position` VÀ neo xương hông về giữa bệ mỗi frame, không thì nhân vật trôi khỏi bệ.
-- Hạt additive trên nền sáng bị hoà trắng → dùng NormalBlending, màu đậm, hạt to (0.5–0.7), sống 1.5–2 s. Playwright screenshot hay bắt hụt frame hạt; muốn kiểm thì `renderer.render()` rồi `canvas.toDataURL()`.
-- Model giày Sketchfab kèm cả cầu thang + tiên → `keep: ['heel']` lọc theo tên material.
-- Quaternius Woman nhìn về +z (không cần xoay), tóc Elsa cần yaw π.
-
-## Chưa làm
-
-- Hà An đang là model người lớn Quaternius (placeholder). Cần model bé gái tóc đen nếu Adam muốn giống thật.
-- Rapunzel, Ariel: model đã có (`rapunzel.glb`, `ariel.glb`, tóc/váy/đuôi rời) nhưng chưa có danh sách 6 món + audio.
-- B2 cộng trong 5, ảnh thật người thân, giọng ba mẹ, test iPad.
+- Rig Elsa (Frozen Free Fall) có root motion + gốc lệch tâm: bỏ mọi track `.position` VÀ neo xương hông mỗi frame.
+- GLTFLoader bỏ dấu `:` trong tên node (`Ariel_Rig:leftArm…` → `Ariel_RigleftArm…`) → chuẩn hoá tên xương phải bỏ cả tiền tố `<X>_Rig`.
+- Tượng đứng chữ T/A: hạ tay bằng "ngắm hướng" trong hệ thân người (cung ngắn nhất) → không xoắn. Aurora có 1 sợi mi gán nhầm vào ngón cái → `cleanStrayArmWeights` gán lại. Merida có cung/tên lơ lửng → thu xương về 0; Mulan kiếm, Rapunzel đèn lồng rời → giấu theo tên material.
+- Hạt additive trên nền sáng bị hoà trắng → NormalBlending, màu đậm, hạt to; burst rải điểm xuất phát tránh cục đặc. Playwright hay hụt frame hạt → `window.__game.snap()`.
+- Audio chưa mở khoá (chưa chạm) thì `onended` không tới → `play()` có hẹn giờ dự phòng, luồng không kẹt.

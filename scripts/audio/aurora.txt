@@ -1,0 +1,5 @@
+# TODO(room-agent): audio tạm cho phòng Aurora (thay khi làm phòng thật). key|text, giọng Linh macOS.
+aurora_name|Rừng hoa của Aurora!
+aurora_intro|Đây là rừng hoa của Aurora. Ôi, công chúa Aurora bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+aurora_thanks|Cảm ơn Hà An! Tớ là Aurora. Hà An giỏi quá!
+aurora_count|Có mấy con bướm? Chạm từng cái để đếm nhé.

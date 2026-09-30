@@ -1,0 +1,5 @@
+# TODO(room-agent): audio tạm cho phòng Ariel (thay khi làm phòng thật). key|text, giọng Linh macOS.
+ariel_name|Cung điện dưới biển!
+ariel_intro|Đây là cung điện dưới biển. Ôi, nàng tiên cá Ariel bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+ariel_thanks|Cảm ơn Hà An! Tớ là Ariel. Hà An giỏi quá!
+ariel_count|Có mấy cái bong bóng? Chạm từng cái để đếm nhé.

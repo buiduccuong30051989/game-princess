@@ -1,117 +1,38 @@
-# key|text  (giọng Linh macOS; thay file cùng tên bằng giọng ba mẹ nếu muốn)
-# --- dẫn chuyện
-intro|Hà An ơi! Hôm nay mình hoá thân thành công chúa nào?
-pick_elsa|Công chúa Elsa! Nữ hoàng băng giá!
-pick_rapunzel|Công chúa Rapunzel!
-pick_ariel|Nàng tiên cá Ariel!
-locked|Món này chưa mở đâu. Hoá thân Elsa xong rồi mình mở tiếp nhé!
-wardrobe_hint|Chạm vào ô dấu hỏi để mở món đồ của Elsa nhé.
-challenge_start|Trả lời đúng để nhận món đồ nào!
-got_item|Được rồi!
-transform|Hà An đã hoá thân thành công chúa Elsa rồi! Tuyệt vời!
-tap_magic|Chạm vào đũa phép để làm phép nhé.
-magic_elsa|Băng tuyết ơi, hãy đến đây!
-all_done|Hà An là công chúa Elsa rồi! Giỏi quá!
+# Câu dùng chung (sảnh + mọi phòng). key|text – giọng Linh macOS. Thay file cùng tên bằng giọng ba mẹ nếu muốn.
+# Câu riêng từng phòng: scripts/audio/<id>.txt. Từ vựng + token đánh vần: tự sinh (scripts/word-audio.mjs).
+# --- đại sảnh
+hall_intro_first|Chào Hà An! Chị là Elsa. Các công chúa trong lâu đài bị phép thuật đóng băng hết rồi. Hà An giúp chị đánh thức các bạn ấy nhé! Chạm vào một bệ đang sáng nào.
+hall_intro|Hà An ơi, mình đi cứu công chúa nào tiếp theo? Chạm vào bệ đang sáng nhé.
+hall_locked|Cửa này còn khoá. Cứu thêm một công chúa nữa là mở được nhé!
+hall_welcome_back|Công chúa đã về đại sảnh rồi! Hà An giỏi quá!
+hall_new_door|Một cánh cửa mới đã mở ra!
+hall_saved_tap|Công chúa này tỉnh rồi! Mình vào chơi với bạn ấy nhé.
+# --- dạ hội
+ball_3|Tuyệt vời! Hà An đã cứu được ba công chúa! Mở dạ hội thôi!
+ball_6|Sáu công chúa rồi! Dạ hội lần thứ hai nào!
+ball_9|Chín công chúa! Hà An giỏi quá! Dạ hội lần thứ ba!
+ball_final|Hà An đã đánh thức tất cả các công chúa! Lâu đài lại vui như xưa. Chị Elsa cũng thay váy băng để dự dạ hội đây!
+ball_end|Dạ hội vui quá! Cảm ơn Hà An!
+# --- trong phòng
+challenge_start|Hà An ơi, trả lời đúng để làm tan băng nhé!
+challenge_start_replay|Mình cùng chơi thêm nhé!
+challenge_next|Thêm một câu nữa nào!
+challenge_last|Câu cuối cùng rồi, cố lên!
+melt_1|Băng tan rồi kìa!
+melt_2|Băng tan thêm rồi! Sắp được rồi!
+wake|Công chúa tỉnh dậy rồi!
+replay_intro|Công chúa tỉnh rồi! Chạm chơi lại để chơi thêm với bạn ấy nhé.
+replay_done|Hà An giỏi quá! Công chúa múa cho Hà An xem nè!
+tap_home|Chạm vào nút lâu đài để về đại sảnh nhé.
+# --- khen / gợi ý
 right|Đúng rồi!
 good|Giỏi lắm!
 yay|Tuyệt vời!
+great|Hà An giỏi quá!
 retry|Thử lại nhé!
-almost|Gần đúng rồi, thử lại nào!
 hint_last|Chạm vào cái đang nhấp nháy nhé.
-ask_count|Có mấy viên ngọc băng? Chạm từng viên để đếm nhé.
-ask_pick_number|Có mấy viên ngọc? Chạm vào số đúng nhé.
 ask_fill|Chữ nào còn thiếu? Chạm vào chữ đúng nhé.
-# --- món đồ Elsa
-item_elsa_hair|Tóc bím của Elsa!
-item_elsa_dress|Váy băng lấp lánh!
-item_elsa_crown|Vương miện băng!
-item_elsa_wand|Đũa phép tuyết!
-item_elsa_olaf|Bạn Olaf!
-item_elsa_slipper|Đôi giày pha lê!
-# --- câu hỏi + tên
-ask_vay|Cái nào là cái váy?
-ask_giay|Cái nào là đôi giày?
-ask_hoa|Cái nào là bông hoa?
-ask_sao|Cái nào là ngôi sao?
-ask_so|Cái nào là con sò?
-ask_bang|Cái nào là băng?
-ask_ca|Con nào là con cá?
-ask_meo|Con nào là con mèo?
-ask_ga|Con nào là con gà?
-ask_bo|Con nào là con bò?
-ask_cho|Con nào là con chó?
-ask_tho|Con nào là con thỏ?
-name_vay|cái váy
-name_giay|đôi giày
-name_hoa|bông hoa
-name_sao|ngôi sao
-name_so|con sò
-name_bang|băng
-name_ca|con cá
-name_meo|con mèo
-name_ga|con gà
-name_bo|con bò
-name_cho|con chó
-name_tho|con thỏ
-# --- token đánh vần
-v_a|a
-v_y|y
-v_o|o
-v_e|e
-v_ay|ay
-v_oa|oa
-v_ao|ao
-v_eo|eo
-v_abreve|ă
-v_ang|ăng
-c_vo|vờ
-c_gio|giờ
-c_ho|hờ
-c_so|sờ
-c_ngo|ngờ
-c_bo|bờ
-c_co|cờ
-c_mo|mờ
-c_go|gờ
-c_cho|chờ
-c_tho|thờ
-s_vay|vay
-s_giay|giay
-s_so|so
-s_ca|ca
-s_meo|meo
-s_ga|ga
-s_bo|bo
-s_cho|cho
-s_tho|tho
-t_sac|sắc
-t_huyen|huyền
-t_hoi|hỏi
-w_vay|váy
-w_giay|giày
-w_hoa|hoa
-w_sao|sao
-w_so|sò
-w_bang|băng
-w_ca|cá
-w_meo|mèo
-w_ga|gà
-w_bo|bò
-w_cho|chó
-w_tho|thỏ
-# --- chữ cái (đọc tên âm khi bé chạm nút chữ)
-l_v|vờ
-l_b|bờ
-l_m|mờ
-l_h|hờ
-l_t|tờ
-l_s|sờ
-l_c|cờ
-l_g|gờ
-l_k|ca
-l_n|nờ
-l_d|dờ
-l_l|lờ
+ask_pick_number|Có tất cả mấy cái? Chạm vào số đúng nhé.
 # --- số
 n1|một
 n2|hai

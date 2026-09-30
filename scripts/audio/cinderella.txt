@@ -1,0 +1,5 @@
+# TODO(room-agent): audio tạm cho phòng Lọ Lem (thay khi làm phòng thật). key|text, giọng Linh macOS.
+cinderella_name|Cầu thang của Lọ Lem!
+cinderella_intro|Đây là cầu thang của Lọ Lem. Ôi, công chúa Lọ Lem bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+cinderella_thanks|Cảm ơn Hà An! Tớ là Lọ Lem. Hà An giỏi quá!
+cinderella_count|Có mấy quả bí ngô? Chạm từng cái để đếm nhé.

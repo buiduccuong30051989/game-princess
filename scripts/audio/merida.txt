@@ -1,0 +1,5 @@
+# TODO(room-agent): audio tạm cho phòng Merida (thay khi làm phòng thật). key|text, giọng Linh macOS.
+merida_name|Rừng xanh của Merida!
+merida_intro|Đây là rừng xanh của Merida. Ôi, công chúa Merida bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+merida_thanks|Cảm ơn Hà An! Tớ là Merida. Hà An giỏi quá!
+merida_count|Có mấy cái bia? Chạm từng cái để đếm nhé.
