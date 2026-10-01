@@ -1,5 +1,5 @@
 # Phòng Aurora (nhà trong rừng). key|text – giọng Linh macOS. Từ vựng (ask_/name_/token) KHÔNG viết ở đây: tự sinh từ src/rooms/aurora.ts.
 aurora_name|Ngôi nhà trong rừng của Aurora!
 aurora_intro|Đây là ngôi nhà nhỏ trong rừng của công chúa Aurora. Ôi, Aurora bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
-aurora_thanks|Cảm ơn Hà An đã cứu tớ! Tớ là Aurora. Mình cùng hát với các bạn chim nhé!
+aurora_thanks|Cảm ơn Nhím đã cứu tớ! Tớ là Aurora. Mình cùng hát với các bạn chim nhé!
 aurora_count|Có mấy con bướm? Chạm từng con để đếm nhé.

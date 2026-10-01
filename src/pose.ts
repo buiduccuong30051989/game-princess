@@ -61,6 +61,7 @@ export interface PoseWeights {
   breathe: number; // biên độ thở / đung đưa
   lookYaw: number; // quay đầu (rad, + = sang trái nhân vật)
   lookPitch: number; // cúi (+) / ngẩng (-)
+  tilt: number;    // nghiêng đầu điệu đà (+ = sang trái nhân vật), kèm lắc hông nhẹ
 }
 
 type V3 = THREE.Vector3;
@@ -73,7 +74,7 @@ export class Poser {
   readonly ok: boolean;
   /** Góc (rad) quanh trục y để mặt model nhìn về +z trong hệ của root. */
   readonly facingYaw: number;
-  readonly w: PoseWeights = { rest: 0, wave: 0, curtsy: 0, open: 0, cheer: 0, breathe: 1, lookYaw: 0, lookPitch: 0 };
+  readonly w: PoseWeights = { rest: 0, wave: 0, curtsy: 0, open: 0, cheer: 0, breathe: 1, lookYaw: 0, lookPitch: 0, tilt: 0 };
   private readonly bind = new Map<THREE.Bone, THREE.Quaternion>();
   private readonly L = new THREE.Vector3(1, 0, 0);
   private readonly U = new THREE.Vector3(0, 1, 0);
@@ -159,7 +160,7 @@ export class Poser {
     const br = w.breathe;
 
     // thân: đung đưa + thở + nhún chào
-    this.rotW(B.hips, F, Math.sin(t * 0.9) * 0.018 * br);
+    this.rotW(B.hips, F, Math.sin(t * 0.9) * 0.018 * br - w.tilt * 0.05);
     this.rotW(B.spine, L, Math.sin(t * 1.8) * 0.012 * br + w.curtsy * 0.12 - w.cheer * 0.05);
     this.rotW(B.chest, L, Math.sin(t * 1.8 + 0.6) * 0.022 * br + w.curtsy * 0.16 - w.cheer * 0.06);
     // tay
@@ -200,7 +201,7 @@ export class Poser {
     this.rotW(B.neck, U, w.lookYaw * 0.4);
     this.rotW(B.head, U, w.lookYaw * 0.6);
     this.rotW(B.head, L, w.lookPitch + w.curtsy * 0.28 - w.cheer * 0.15);
-    this.rotW(B.head, F, Math.sin(t * 0.7) * 0.05 * br + w.wave * 0.1);
+    this.rotW(B.head, F, Math.sin(t * 0.7) * 0.05 * br + w.wave * 0.1 + w.tilt * 0.26);
   }
 
   /** Vị trí thế giới 1 xương (vd đầu để bắn hạt). */

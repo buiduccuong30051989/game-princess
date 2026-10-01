@@ -30,7 +30,9 @@ export class PrincessActor {
   /** tự làm động tác lặt vặt khi đã tỉnh (nhìn quanh, thỉnh thoảng vẫy) */
   idleLife = true;
   readonly height: number;
-  private lifeTimer = 3 + Math.random() * 4;
+  /** lệch pha từng công chúa: không bao giờ cả hàng cùng làm 1 động tác */
+  private lifeTimer = 2 + Math.random() * 12;
+  private lastLife = -1;
   private busy = 0;
   private bobT = Math.random() * 10;
   private readonly spec: PrincessSpec;
@@ -174,6 +176,45 @@ export class PrincessActor {
     return this.poser?.jointWorld('chest', out) ?? this.root.localToWorld(out.set(0, this.height * 0.68, 0));
   }
 
+  /** Rảnh (không đang làm động tác nào). */
+  get idle(): boolean { return this.busy === 0; }
+
+  /** Chờ động tác đang làm xong (tối đa maxMs) – trước khi nghi lễ ra lệnh động tác khác, tránh 2 lệnh giành nhau. */
+  async settle(maxMs = 3000): Promise<void> {
+    const t0 = performance.now();
+    while (this.busy > 0 && performance.now() - t0 < maxMs) await wait(80);
+  }
+
+  /** 1 động tác ngẫu nhiên khi đứng chơi (không lặp lại động tác vừa làm). Mọi trọng số đều tween → không giật. */
+  private async idleAct(): Promise<void> {
+    const acts = [
+      // nhìn quanh: trái → phải → giữa
+      () => this.act(async () => {
+        const s = Math.random() < 0.5 ? 1 : -1;
+        await this.tw(900, { lookYaw: 0.42 * s, lookPitch: -0.05 });
+        await wait(700 + Math.random() * 500);
+        await this.tw(1100, { lookYaw: -0.38 * s });
+        await wait(600);
+        await this.tw(800, { lookYaw: 0, lookPitch: 0 });
+      }),
+      () => this.wave(1 + Math.random() * 1.2),
+      () => this.curtsy(),
+      () => this.twirl(1, 1700),
+      // nghiêng đầu điệu đà, lắc hông
+      () => this.act(async () => {
+        const s = Math.random() < 0.5 ? 1 : -1;
+        await this.tw(700, { tilt: s, lookPitch: 0.06 });
+        await wait(900 + Math.random() * 600);
+        await this.tw(800, { tilt: 0, lookPitch: 0 });
+      }),
+      () => this.cheer(0.6),
+    ];
+    let i = Math.floor(Math.random() * acts.length);
+    if (i === this.lastLife) i = (i + 1 + Math.floor(Math.random() * (acts.length - 1))) % acts.length;
+    this.lastLife = i;
+    await acts[i]();
+  }
+
   update(dt: number): void {
     this.ice?.update(dt);
     if (!this.poser) return;
@@ -185,11 +226,8 @@ export class PrincessActor {
     if (this.awake && this.idleLife && this.busy === 0) {
       this.lifeTimer -= dt;
       if (this.lifeTimer <= 0) {
-        this.lifeTimer = 4 + Math.random() * 6;
-        const r = Math.random();
-        if (r < 0.55) void this.act(async () => { await this.tw(900, { lookYaw: (Math.random() - 0.5) * 0.9 }); await wait(1400); await this.tw(900, { lookYaw: 0 }); });
-        else if (r < 0.8) void this.wave(1.2);
-        else void this.act(async () => { await this.tw(500, { lookPitch: 0.12 }); await this.tw(600, { lookPitch: 0 }); });
+        this.lifeTimer = 8 + Math.random() * 7;
+        void this.idleAct();
       }
     }
     this.poser.update(dt);

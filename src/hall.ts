@@ -1,6 +1,8 @@
 // ĐẠI SẢNH: sảnh tròn lát đá hoa, 11 bệ xếp vòng quanh sân khấu giữa (Elsa dẫn đường đứng đó),
 // sau mỗi bệ là 1 cánh cửa phòng. Bệ: tượng băng (chưa cứu) / công chúa thở, vẫy (đã cứu). Chạm bệ → vào phòng.
 // Cứu đủ 3/6/9/11 → dạ hội mini (đèn màu, nhạc hộp, pháo hoa, công chúa xoay váy); 11 → Elsa thay váy băng Frozen 1.
+// Sảnh "sống": lúc rảnh Elsa tự lướt đi thăm bệ / ra trước vẫy bé / xoay tung tuyết; tuyết rơi lác đác;
+// khung ảnh "Gia đình Nhím" ở góc phải (chạm vào → người nhà cổ vũ). Dạ hội: cả nhà lần lượt cổ vũ.
 import * as THREE from 'three';
 import type { Engine, GameScene } from './core/engine.ts';
 import { emojiTexture, disposeTree, prefetch, lodModel } from './core/assets.ts';
@@ -10,7 +12,8 @@ import { princessInfo } from './rooms/princesses.ts';
 import { PrincessActor } from './princess.ts';
 import { ElsaGuide, ELSA_MODEL } from './elsa.ts';
 import { play, sfx, musicBox, stopMusic, chime, WALTZ, CHIME_BIG, stopSpeech } from './audio.ts';
-import { els, showHud, setStars, confetti, showActions } from './ui.ts';
+import { els, showHud, setStars, confetti, showActions, banner } from './ui.ts';
+import { FAMILY, photoUrl, familyCheer, familyCheerAll, familyBusy, clearFamily } from './family.ts';
 import { tween, wait, easeOutBack, easeInOutSine } from './tween.ts';
 import type { RoomDef, RoomId } from './room/types.ts';
 import {
@@ -81,6 +84,16 @@ export class HallScene implements GameScene {
   private time = 0;
   private lastLine: string | null = null;
   private readonly raycaster = new THREE.Raycaster();
+  // Elsa tự hoạt động lúc rảnh (lifeToken: lệnh mới / bé chạm → huỷ chuỗi đang chạy)
+  private readonly elsaHome = new THREE.Vector3(STAGE.x, STAGE_H, STAGE.z + 0.2);
+  private lifeT = 7;
+  private lifeToken = 0;
+  private lifeRunning = false;
+  private elsaHit!: THREE.Mesh;
+  private familyFrame: THREE.Group | null = null;
+  private readonly snow: { sp: THREE.Sprite; speed: number; phase: number }[] = [];
+  private readonly snowMats: THREE.SpriteMaterial[] = [];
+  private readonly _v = new THREE.Vector3();
   private readonly onSay = () => { if (this.lastLine) void play(this.lastLine); };
 
   private constructor(engine: Engine, opts: HallOpts) {
@@ -115,8 +128,16 @@ export class HallScene implements GameScene {
     ROOMS.forEach((def, i) => this.buildSlot(def, i));
 
     this.elsa = new ElsaGuide(1.9);
-    this.elsa.root.position.set(STAGE.x, STAGE_H, STAGE.z + 0.2);
+    this.elsa.root.position.copy(this.elsaHome);
+    this.elsa.magic = this.engine.magic;
+    this.elsa.groundAt = stageGround;
     this.scene.add(this.elsa.root);
+    // vùng chạm Elsa (đi theo Elsa khi lướt)
+    this.elsaHit = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 2, 10), new THREE.MeshBasicMaterial({ visible: false }));
+    this.elsaHit.position.y = 1;
+    this.elsaHit.userData.elsa = true;
+    this.elsa.root.add(this.elsaHit);
+    this.buildSnow();
     const jobs: Promise<unknown>[] = [this.elsa.load().catch((e) => console.error('[hall] không tải được Elsa', e))];
     if (this.finaleDone) jobs.push(this.loadElsaF1(true).catch((e) => console.error('[hall] không tải được Elsa F1', e)));
     // tải trước tượng các bệ gần nhất (đã mở + vừa cứu); còn lại tải dần sau khi hiện sảnh
@@ -182,7 +203,11 @@ export class HallScene implements GameScene {
       trim.rotation.x = -Math.PI / 2; trim.position.set(x, 0.014, 7.6);
       s.add(trim);
     }
-    for (const x of [-2.9, 2.9]) s.add(this.flowerUrn(x, 4.4));
+    s.add(this.flowerUrn(-2.9, 4.4));
+    this.familyFrame = this.buildFamilyFrame();
+    this.familyFrame.position.set(2.75, 0, 4.5);
+    this.familyFrame.lookAt(0.6, 0, 12.6);
+    s.add(this.familyFrame);
     // tường tròn (elip), giấy dán tím hồng sọc vàng
     const wallGeo = new THREE.CylinderGeometry(1, 1, WALL.h, 96, 1, true);
     const wallMat = texMat(wallpaperTex(0xf1e0ff, 0xe6ccff, 0xffd166, [18, 2]), { rough: 0.9, side: THREE.BackSide });
@@ -255,6 +280,73 @@ export class HallScene implements GameScene {
     foot.castShadow = bowl.castShadow = true;
     g.position.set(x, 0, z);
     return g;
+  }
+
+  /** Khung ảnh "Gia đình Nhím" trên giá vẽ vàng: 5 ảnh tròn (ảnh thật nếu có trong public/family/, không thì emoji). */
+  private buildFamilyFrame(): THREE.Group {
+    const g = new THREE.Group();
+    const gold = mat(0xffc94d, { rough: 0.35, emissive: 0x6b4200, ei: 0.25 });
+    const W = 1.75, H = 1.25, cy = 1.5;
+    // giá vẽ: 2 chân trước + 1 chân sau + thanh đỡ
+    // chân nằm SAU tranh, không nhô quá mép trên khung
+    for (const [x, z, rx] of [[-0.6, -0.06, 0], [0.6, -0.06, 0], [0, -0.5, -0.3]] as const) {
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 2.05, 8), gold);
+      leg.position.set(x, 1.0, z);
+      leg.rotation.x = rx;
+      leg.castShadow = true;
+      g.add(leg);
+    }
+    const shelf = new THREE.Mesh(new THREE.BoxGeometry(W + 0.1, 0.06, 0.16), gold);
+    shelf.position.set(0, cy - H / 2 - 0.08, 0.12);
+    g.add(shelf);
+    // tranh
+    const canvas = document.createElement('canvas');
+    canvas.width = 768; canvas.height = 550;
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const imgs = new Map<string, HTMLImageElement>();
+    const draw = () => drawFamilyCanvas(canvas, imgs);
+    draw();
+    const pic = new THREE.Mesh(new THREE.PlaneGeometry(W, H), new THREE.MeshBasicMaterial({ map: tex, fog: false }));
+    pic.position.set(0, cy, 0.1);
+    pic.rotation.x = -0.06;
+    pic.userData.family = true;
+    g.add(pic);
+    // viền khung
+    const t = 0.09;
+    for (const [w, h, x, y] of [[W + 2 * t, t, 0, H / 2 + t / 2], [W + 2 * t, t, 0, -H / 2 - t / 2], [t, H, -W / 2 - t / 2, 0], [t, H, W / 2 + t / 2, 0]] as const) {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.08), gold);
+      b.position.set(x, cy + y, 0.1);
+      b.rotation.x = -0.06;
+      g.add(b);
+    }
+    const heart = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTexture('💖'), transparent: true, depthWrite: false }));
+    heart.scale.setScalar(0.42);
+    heart.position.set(W / 2 + 0.05, cy + H / 2 + 0.12, 0.2);
+    g.add(heart);
+    g.userData.heart = heart;
+    // ảnh thật (nếu có): tải xong vẽ lại
+    for (const m of FAMILY) {
+      const url = photoUrl(m.id);
+      if (!url) continue;
+      const img = new Image();
+      img.onload = () => { if (!this.alive) return; imgs.set(m.id, img); draw(); tex.needsUpdate = true; };
+      img.src = url;
+    }
+    return g;
+  }
+
+  /** Tuyết rơi lác đác trong sảnh: 18 bông emoji, 3 material dùng chung (xoay khác nhau), không tạo object mỗi frame. */
+  private buildSnow(): void {
+    const tex = emojiTexture('❄️');
+    for (let i = 0; i < 3; i++) this.snowMats.push(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.85, depthWrite: false }));
+    for (let i = 0; i < 18; i++) {
+      const sp = new THREE.Sprite(this.snowMats[i % 3]);
+      sp.scale.setScalar(0.2 + Math.random() * 0.2);
+      sp.position.set((Math.random() - 0.5) * 17, Math.random() * 7.5, -6 + Math.random() * 11);
+      this.scene.add(sp);
+      this.snow.push({ sp, speed: 0.35 + Math.random() * 0.4, phase: Math.random() * 10 });
+    }
   }
 
   private onWall(a: number, inset = 0): THREE.Vector3 {
@@ -545,8 +637,9 @@ export class HallScene implements GameScene {
         markBall(p, ball);
       }
       this.busy = false;
+      banner('Chào Nhím! 👋', 2400);
       void this.guideHello();
-      if (!this.opts.arrival && !ball) await this.line(p.saved.length === 0 ? 'hall_intro_first' : 'hall_intro');
+      if (!this.opts.arrival && !ball) await this.line(p.saved.length === 0 ? 'hall_intro_first' : 'hall_hello');
       else await this.line('hall_intro');
     } finally {
       this.busy = false;
@@ -555,7 +648,8 @@ export class HallScene implements GameScene {
 
   private guideHello(): Promise<void> {
     if (this.elsaF1) return this.elsaF1.wave(1.5);
-    return this.elsa.play('hello');
+    void this.elsa.face(this.camera.position);
+    return this.elsa.wave(2.2);
   }
 
   /** Công chúa vừa cứu về bệ: bừng sáng + hiện ra, Elsa mừng, mở cửa mới. */
@@ -583,6 +677,8 @@ export class HallScene implements GameScene {
     s.actor?.wave(1.6);
     await this.line('hall_welcome_back');
     if (!this.alive) return;
+    await this.cheer();
+    if (!this.alive) return;
     // cửa mới mở
     const newly = ROOM_ORDER[3 + this.opts.progress.saved.length - 1];
     const ns = newly ? this.slots.find((x) => x.def.id === newly) : undefined;
@@ -602,12 +698,129 @@ export class HallScene implements GameScene {
     this.idleT = 0;
     if (this.busy || this.opening || !this.alive) return;
     this.raycaster.setFromCamera(ndc, this.camera);
-    const targets: THREE.Object3D[] = [];
+    const targets: THREE.Object3D[] = [this.elsaHit];
     for (const s of this.slots) targets.push(s.hit, s.badge);
-    const hit = this.raycaster.intersectObjects(targets, false)[0];
-    if (!hit) return;
-    const s = this.slots[hit.object.userData.slot as number];
-    if (s) void this.tapSlot(s);
+    if (this.familyFrame) targets.push(this.familyFrame);
+    const hit = this.raycaster.intersectObjects(targets, true)[0];
+    const ud = hit?.object.userData ?? {};
+    // bé chạm bất kỳ đâu: Elsa dừng việc đang làm và phản ứng
+    if (ud.elsa) { void this.runLife((ok) => this.elsaTapped(ok)); return; }
+    if (ud.family) { void this.familyWallTap(); return; }
+    const s = typeof ud.slot === 'number' ? this.slots[ud.slot as number] : undefined;
+    if (s) { this.stopLife(); void this.tapSlot(s); return; }
+    if (!this.elsaF1) void this.runLife(async (ok) => { await this.elsa.face(this.camera.position, 300); if (ok()) await this.elsa.wave(1.1); });
+  }
+
+  /** 1 người nhà cổ vũ (bong bóng + giọng). */
+  private async cheer(): Promise<void> {
+    if (!this.alive) return;
+    this.speaking++;
+    try { await familyCheer(); } finally { this.speaking--; this.idleT = 0; }
+  }
+
+  private async familyWallTap(): Promise<void> {
+    if (familyBusy() || !this.familyFrame) return;
+    sfx('sfx_tap', 0.5);
+    const f = this.familyFrame;
+    void tween(600, (k) => f.scale.setScalar(1 + Math.sin(k * Math.PI) * 0.08), easeOutBack);
+    const heart = f.userData.heart as THREE.Sprite;
+    this.engine.magic.burst(heart.getWorldPosition(new THREE.Vector3()), 50, 0xff5fb4, 1.8, 0.4, 1.2, -1.2);
+    if (!this.elsaF1) void this.runLife(async (ok) => { await this.elsa.face(f.position, 300); if (ok()) await this.elsa.wave(1.4); });
+    await this.line('family_wall');
+    await this.cheer();
+  }
+
+  /** Bé chạm vào Elsa: quay ra, xoay tung tuyết, cười, vẫy. */
+  private async elsaTapped(ok: () => boolean): Promise<void> {
+    sfx('sfx_pop', 0.5);
+    const key = `elsa_tap_${1 + Math.floor(Math.random() * 3)}`;
+    if (this.elsaF1) { void this.line(key); await this.elsaF1.twirl(1, 1400); return; }
+    await this.elsa.face(this.camera.position, 250);
+    if (!ok()) return;
+    void this.line(key);
+    await this.elsa.spinOnce(1100);
+    if (!ok()) return;
+    await this.elsa.wave(1.4);
+  }
+
+  // ------------------------------------------------------------------ Elsa tự hoạt động
+  /** Elsa rảnh: không nghi lễ, không đang mở cửa, không phải Elsa váy F1. */
+  private get elsaFree(): boolean {
+    return !this.busy && !this.opening && this.alive && !this.elsaF1 && this.elsa.loaded;
+  }
+
+  /** Chạy 1 chuỗi hoạt động của Elsa; chuỗi mới / stopLife() huỷ chuỗi cũ (ok() = còn hiệu lực). */
+  private async runLife(fn: (ok: () => boolean) => Promise<void>): Promise<void> {
+    this.stopLife();
+    const my = ++this.lifeToken;
+    const ok = () => my === this.lifeToken && this.alive;
+    this.lifeRunning = true;
+    try { await fn(ok); } finally {
+      if (my === this.lifeToken) { this.lifeRunning = false; this.lifeT = 6 + Math.random() * 6; }
+    }
+  }
+
+  private stopLife(): void {
+    this.lifeToken++;
+    this.lifeRunning = false;
+    this.lifeT = Math.max(this.lifeT, 4 + Math.random() * 4);
+    this.elsa?.stop();
+  }
+
+  /** Mỗi 6–12 s lúc rảnh: thăm 1 bệ / ra trước vẫy bé / vẫy tại chỗ / xoay tung tuyết / múa 1 clip. */
+  private async elsaIdle(ok: () => boolean): Promise<void> {
+    const e = this.elsa, home = this.elsaHome, cam = this.camera.position;
+    // bị ngắt giữa đường lần trước → về sân khấu trước
+    if (Math.hypot(e.root.position.x - home.x, e.root.position.z - home.z) > 0.25) {
+      if (!(await e.glideTo(home.x, home.z)) || !ok()) return;
+      await e.face(cam);
+      return;
+    }
+    const r = Math.random();
+    if (r < 0.32) {
+      // thăm 1 bệ: lướt tới trước bệ, ngắm tượng; công chúa đã tỉnh thì 2 bạn vẫy nhau
+      const loaded = this.slots.filter((s) => s.actor);
+      const saved = loaded.filter((s) => s.actor!.awake);
+      const pool = saved.length && Math.random() < 0.7 ? saved : loaded;
+      const s = pool[Math.floor(Math.random() * pool.length)];
+      if (!s) return;
+      const p = s.base.position;
+      const dx = -p.x, dz = 0.3 - p.z, d = Math.hypot(dx, dz) || 1;
+      if (!(await e.glideTo(p.x + (dx / d) * 2.1, p.z + (dz / d) * 2.1)) || !ok()) return;
+      const head = s.base.localToWorld(new THREE.Vector3(0, PED_H + STATUE_H * 0.8, 0));
+      await e.face(head, 500);
+      if (!ok()) return;
+      if (s.actor?.awake) {
+        if (s.actor.idle) void s.actor.wave(1.3);
+        await e.wave(1.4);
+      } else {
+        this.engine.magic.burst(head, 30, 0x4fb3ff, 1.2, 0.3, 1, -1);
+        await wait(1500);
+      }
+      if (!ok()) return;
+      if (!(await e.glideTo(home.x, home.z)) || !ok()) return;
+      await e.face(cam);
+    } else if (r < 0.52) {
+      // lướt ra trước sân khấu, vẫy bé, có khi xoay 1 vòng, rồi về
+      const x = (Math.random() - 0.5) * 4.6, z = 2.5 + Math.random() * 1.1;
+      if (!(await e.glideTo(x, z)) || !ok()) return;
+      await e.face(cam, 400);
+      if (!ok()) return;
+      await e.wave(1.6);
+      if (!ok()) return;
+      if (Math.random() < 0.4) { await e.spinOnce(); if (!ok()) return; }
+      if (!(await e.glideTo(home.x, home.z)) || !ok()) return;
+      await e.face(cam);
+    } else if (r < 0.7) {
+      await e.face(cam, 350);
+      if (ok()) await e.wave(2);
+    } else if (r < 0.85) {
+      await e.face(cam, 300);
+      if (ok()) await e.spinOnce();
+    } else {
+      await e.face(cam, 300);
+      if (ok()) await e.play((['best', 'great', 'celebrate'] as const)[Math.floor(Math.random() * 3)]);
+    }
   }
 
   private async tapSlot(s: Slot): Promise<void> {
@@ -657,6 +870,9 @@ export class HallScene implements GameScene {
   private async runBall(n: number): Promise<void> {
     const final = n >= 11;
     const awake = this.slots.filter((s) => isSaved(this.opts.progress, s.def.id) && s.actor);
+    // dạ hội điều khiển công chúa: tắt động tác lặt vặt, chờ động tác đang dở xong (không giành nhau)
+    awake.forEach((s) => { s.actor!.idleLife = false; });
+    await Promise.all(awake.map((s) => s.actor!.settle()));
     // đèn tối lại, sắc tím hồng + đèn màu quay
     const h0 = this.hemi.intensity, k0 = this.key.intensity;
     const hc0 = this.hemi.color.clone();
@@ -674,7 +890,14 @@ export class HallScene implements GameScene {
     this.discoLights = disco;
     void tween(600, (k) => disco.forEach((l) => (l.intensity = 14 * k)));
     const music = musicBox(WALTZ, 150, 0.2, 2);
-    void this.line(final ? 'ball_final' : `ball_${n}`);
+    const ballLine = this.line(final ? 'ball_final' : `ball_${n}`);
+    // nói xong lời mở dạ hội → cả nhà lần lượt cổ vũ
+    const family = (async () => {
+      await ballLine;
+      if (!this.alive) return;
+      this.speaking++;
+      try { await familyCheerAll(() => this.alive); } finally { this.speaking--; }
+    })();
     confetti(120);
     let fireworks = true;
     const fw = (async () => {
@@ -692,9 +915,11 @@ export class HallScene implements GameScene {
     }
     if (final && this.alive) await this.finaleChange();
     await Promise.race([music, wait(final ? 4000 : 1500)]);
+    await family;
     fireworks = false;
     await fw;
     if (!this.alive) return;
+    awake.forEach((s) => { if (s.actor) s.actor.idleLife = true; });
     stopMusic();
     void tween(900, (k) => {
       this.hemi.intensity = h0 - 0.45 * (1 - k);
@@ -752,6 +977,25 @@ export class HallScene implements GameScene {
     this.elsa?.update(dt);
     this.elsaF1?.update(dt);
     const p = this.opts.progress;
+    // Elsa tự hoạt động lúc rảnh; nghi lễ bắt đầu → dừng ngay
+    if (this.elsa) {
+      if (this.elsaFree) {
+        if (!this.lifeRunning) { this.lifeT -= dt; if (this.lifeT <= 0) void this.runLife((ok) => this.elsaIdle(ok)); }
+      } else if (this.lifeRunning && (this.busy || this.opening)) this.stopLife();
+      // lấp lánh băng quanh Elsa
+      if (this.elsa.root.visible && Math.random() < 0.1) {
+        const ep = this.elsa.root.position;
+        this.engine.magic.twinkle(this._v.set(ep.x + (Math.random() - 0.5) * 0.9, ep.y + 0.2 + Math.random() * 1.6, ep.z + (Math.random() - 0.5) * 0.7), Math.random() < 0.6 ? 0x4fb3ff : 0xb48bff, 1, 0.2, 0.22);
+      }
+    }
+    // tuyết rơi
+    for (let i = 0; i < this.snowMats.length; i++) this.snowMats[i].rotation += dt * (0.3 + i * 0.25) * (i % 2 ? 1 : -1);
+    for (const f of this.snow) {
+      const sp = f.sp.position;
+      sp.y -= f.speed * dt;
+      sp.x += Math.cos(t * 0.7 + f.phase) * 0.25 * dt;
+      if (sp.y < 0.05) sp.set((Math.random() - 0.5) * 17, 7 + Math.random(), -6 + Math.random() * 11);
+    }
     // bé ngồi im lâu: Elsa nhắc lại + nhún các bệ đang mở
     if (!this.busy && !this.opening && this.speaking === 0) {
       this.idleT += dt;
@@ -768,7 +1012,7 @@ export class HallScene implements GameScene {
       rm.opacity = open ? 0.35 + Math.sin(t * 3 + s.index) * 0.25 : 0;
       s.badge.position.y = PED_H + STATUE_H + 0.45 + Math.sin(t * 1.6 + s.index) * 0.06;
       if (open && Math.random() < 0.08) {
-        const w = s.base.localToWorld(new THREE.Vector3((Math.random() - 0.5) * 1.4, 0.3 + Math.random() * 1.8, (Math.random() - 0.5) * 1.4));
+        const w = s.base.localToWorld(this._v.set((Math.random() - 0.5) * 1.4, 0.3 + Math.random() * 1.8, (Math.random() - 0.5) * 1.4));
         this.engine.magic.twinkle(w, Math.random() < 0.5 ? s.def.palette.accent : 0xffffff, 1, 0.2, 0.28);
       }
     }
@@ -778,17 +1022,67 @@ export class HallScene implements GameScene {
       l.position.set(Math.cos(a) * 6, 3.5 + Math.sin(t * 2 + i) * 0.8, RING.cz + Math.sin(a) * 3.5);
     });
     if (Math.random() < 0.15) {
-      this.engine.magic.twinkle(new THREE.Vector3((Math.random() - 0.5) * 3, 5.8 + Math.random() * 0.8, RING.cz + (Math.random() - 0.5) * 3), 0xffe08a, 1, 0.2, 0.25);
+      this.engine.magic.twinkle(this._v.set((Math.random() - 0.5) * 3, 5.8 + Math.random() * 0.8, RING.cz + (Math.random() - 0.5) * 3), 0xffe08a, 1, 0.2, 0.25);
     }
   }
 
   dispose(): void {
     this.alive = false;
+    this.lifeToken++;
     stopMusic();
+    clearFamily();
     els.say.removeEventListener('click', this.onSay);
     for (const s of this.slots) s.actor?.dispose();
     this.elsa?.dispose();
     this.elsaF1?.dispose();
     disposeTree(this.scene);
   }
+}
+
+/** Mặt sàn dưới chân Elsa: sân khấu 2 tầng (r 1.35 cao 0.42, r 1.7 cao 0.2), ngoài là sàn. */
+function stageGround(x: number, z: number): number {
+  const d = Math.hypot(x - STAGE.x, z - STAGE.z);
+  return d < 1.3 ? STAGE_H : d < 1.68 ? 0.2 : 0;
+}
+
+/** Vẽ tranh gia đình: nền hồng, tiêu đề, 5 ảnh tròn (3 trên, 2 dưới) + tên. */
+function drawFamilyCanvas(c: HTMLCanvasElement, imgs: Map<string, HTMLImageElement>): void {
+  const g = c.getContext('2d')!;
+  const w = c.width, h = c.height;
+  const bg = g.createLinearGradient(0, 0, 0, h);
+  bg.addColorStop(0, '#fff3fa'); bg.addColorStop(1, '#ffd9ee');
+  g.fillStyle = bg; g.fillRect(0, 0, w, h);
+  // chấm tim mờ
+  g.font = '34px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+  g.globalAlpha = 0.25;
+  for (let i = 0; i < 14; i++) g.fillText(i % 2 ? '💗' : '✨', (i * 137) % w, 40 + ((i * 89) % (h - 40)));
+  g.globalAlpha = 1;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = '800 64px "Baloo 2", "Nunito", system-ui, sans-serif';
+  g.lineWidth = 10; g.strokeStyle = '#4a2c4a'; g.fillStyle = '#ffffff';
+  g.strokeText('Gia đình Nhím', w / 2, 52); g.fillText('Gia đình Nhím', w / 2, 52);
+  const slots = [[w * 0.2, 185], [w * 0.5, 185], [w * 0.8, 185], [w * 0.33, 400], [w * 0.67, 400]];
+  FAMILY.forEach((m, i) => {
+    const [x, y] = slots[i];
+    const r = 82;
+    g.fillStyle = m.color;
+    g.beginPath(); g.arc(x, y, r + 9, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#ffffff';
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+    const img = imgs.get(m.id);
+    if (img) {
+      g.save();
+      g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.clip();
+      const s = Math.min(img.width, img.height);
+      g.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, x - r, y - r, r * 2, r * 2);
+      g.restore();
+    } else {
+      g.font = '112px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+      g.fillText(m.emoji, x, y + 8);
+    }
+    const label = m.name.replace(' Celistia', '');
+    g.font = '800 40px "Baloo 2", "Nunito", system-ui, sans-serif';
+    g.lineWidth = 8; g.strokeStyle = '#ffffff'; g.fillStyle = m.color;
+    g.strokeText(label, x, y + r + 32); g.fillText(label, x, y + r + 32);
+  });
 }

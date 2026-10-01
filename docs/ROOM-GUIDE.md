@@ -2,7 +2,7 @@
 
 Tài liệu cho người (hoặc agent) làm 1 trong 11 phòng của "Lâu đài công chúa". Phòng mẫu đã xong: **`src/rooms/rapunzel.ts`** + **`scripts/audio/rapunzel.txt`**. Đọc hết file mẫu trước khi viết.
 
-Người chơi: Hà An, 5 tuổi, chưa biết đọc. Chơi trên iPad/Mac, chỉ chạm. Mọi chỉ dẫn đều được đọc thành tiếng. Không có thua.
+Người chơi: Hà An (tên ở nhà **Nhím**), 5 tuổi, chưa biết đọc. Chơi trên iPad/Mac, chỉ chạm. Mọi chỉ dẫn đều được đọc thành tiếng. Không có thua.
 
 ---
 
@@ -129,7 +129,7 @@ Giọng: macOS `say -v Linh` → `.m4a` trong `public/audio/`.
    belle_thanks|Cảm ơn Hà An nhé! Tớ là Belle. Mình cùng đọc truyện nhé!
    belle_count|Có mấy bông hồng? Chạm từng bông để đếm nhé.
    ```
-   - Câu ngắn, từ dễ, giọng vui, gọi "Hà An". Intro ≤ 2 câu + lời nhắc làm tan băng. Thanks do công chúa nói, xưng "tớ".
+   - Câu ngắn, từ dễ, giọng vui, gọi bé là "Nhím" (thỉnh thoảng "Hà An"). Intro ≤ 2 câu + lời nhắc làm tan băng. Thanks do công chúa nói, xưng "tớ".
    - Câu đếm nói rõ vật đếm là gì, khớp `count.emoji`.
    - **KHÔNG viết dòng từ vựng** (`ask_…`, `name_…`, `c_…`, `v_…`, `s_…`, `t_…`, `w_…`): chúng tự sinh.
 2. Sinh audio (chỉ sinh clip chưa có; phòng khác không bị ảnh hưởng):

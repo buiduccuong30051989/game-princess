@@ -11,6 +11,7 @@ import { COMMON_KEYS, roomAudioKeys } from './room/audioKeys.ts';
 import { ELSA_MODEL } from './elsa.ts';
 import { unlockAudio, preload, stopSpeech, stopMusic } from './audio.ts';
 import { els, setStars, startSparkles } from './ui.ts';
+import { FAMILY_KEYS } from './family.ts';
 import type { RoomId } from './room/types.ts';
 
 const engine = new Engine(document.getElementById('app')!, els.fade);
@@ -61,7 +62,7 @@ function boot(): void {
     els.start.hidden = true;
     const unlock = () => { unlockAudio(); window.removeEventListener('pointerdown', unlock); };
     window.addEventListener('pointerdown', unlock);
-    void preload(COMMON_KEYS);
+    void preload([...COMMON_KEYS, ...FAMILY_KEYS]);
     if (!getRoom(PARAMS.room)) console.error(`?room=${PARAMS.room} không có. Có: ${ROOM_ORDER.join(', ')}`);
     void goRoom((getRoom(PARAMS.room)?.id ?? 'rapunzel') as RoomId);
     return;
@@ -72,7 +73,7 @@ function boot(): void {
     unlockAudio();
     els.start.classList.add('hide');
     setTimeout(() => (els.start.hidden = true), 520);
-    void preload(COMMON_KEYS).then(() => goHall());
+    void preload([...COMMON_KEYS, ...FAMILY_KEYS]).then(() => goHall());
   }, { once: true });
 }
 

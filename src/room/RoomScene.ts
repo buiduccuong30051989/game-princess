@@ -1,5 +1,7 @@
 // Màn PHÒNG CÔNG CHÚA: dựng bệ + tượng băng + Elsa + ánh sáng chung, gọi RoomDef.buildScene để trang trí,
 // chạy 3 thử thách → mỗi câu đúng Elsa làm phép, băng tan 1 nấc → câu 3: băng vỡ, công chúa tỉnh, cảm ơn.
+// Elsa "sống": vào phòng vẫy chào, lúc chờ bé thì lướt nhẹ / ngắm tượng / quay ra vẫy; đúng → làm phép + vẫy;
+// sai → suy nghĩ / lo lắng. Thỉnh thoảng người nhà Nhím hiện bong bóng cổ vũ (src/family.ts).
 import * as THREE from 'three';
 import type { Engine, GameScene } from '../core/engine.ts';
 import { instance, emojiSprite, disposeTree, evictGLB } from '../core/assets.ts';
@@ -9,6 +11,7 @@ import { Challenge } from '../challenge.ts';
 import { play, sfx, chime, CHIME, CHIME_BIG, stopSpeech } from '../audio.ts';
 import { els, showHud, banner, setFrost, showActions, confetti, toast } from '../ui.ts';
 import { tween, wait, easeInOutSine } from '../tween.ts';
+import { familyCheer, clearFamily } from '../family.ts';
 import { princessInfo } from '../rooms/princesses.ts';
 import { buildWord, validateRoom } from './words.ts';
 import { roomAudioKeys } from './audioKeys.ts';
@@ -59,6 +62,13 @@ export class RoomScene implements GameScene {
   private key!: THREE.DirectionalLight;
   private fill!: THREE.DirectionalLight;
   private thinkCooldown = 0;
+  private wrongN = 0;
+  // Elsa tự hoạt động lúc chờ bé (elsaHold > 0: đang làm phép / nghi lễ → đứng yên chờ lệnh)
+  private elsaHold = 0;
+  private lifeT = 6;
+  private lifeToken = 0;
+  private lifeRunning = false;
+  private readonly _v = new THREE.Vector3();
   private flowRunning = false;
   private lastLine: string | null = null;
   private savedReported = false;
@@ -103,6 +113,7 @@ export class RoomScene implements GameScene {
       model: def.princessModel, height: PRINCESS_H, tuning: { ...info?.tuning, ...def.pose }, hide: info?.hide, hideBones: info?.hideBones,
     });
     this.elsa = new ElsaGuide(1.92);
+    this.elsa.magic = this.engine.magic;
     const frozen = !(this.opts.saved || this.opts.startWake);
     const startMelt = frozen ? Math.max(0, Math.min(2, this.opts.startMelt ?? 0)) : 3;
 
@@ -201,10 +212,20 @@ export class RoomScene implements GameScene {
     await play(key);
   }
 
+  /** Elsa quay ra vẫy chào bé khi vào phòng. */
+  private async greet(): Promise<void> {
+    const release = this.holdElsa();
+    try {
+      await this.elsa.face(this.camera.position, 350);
+      if (!this.alive) return;
+      await this.elsa.wave(2.2);
+    } finally { release(); }
+  }
+
   private async intro(): Promise<void> {
     this.flowRunning = true;
     try {
-      void this.elsa.play('hello');
+      void this.greet();
       if (this.awake) {
         void this.princess.wave(2);
         await this.line('replay_intro');
@@ -246,6 +267,11 @@ export class RoomScene implements GameScene {
 
   /** Câu đúng: Elsa làm phép, tia phép bay tới tượng, băng tan 1 nấc. */
   private async celebrateCorrect(i: number): Promise<void> {
+    const release = this.holdElsa();
+    try { await this.celebrateCorrectInner(i); } finally { release(); }
+  }
+
+  private async celebrateCorrectInner(i: number): Promise<void> {
     const [c1, c2] = this.def.magicColors;
     const praise = ['good', 'yay', 'great'][i % 3];
     void this.line(praise);
@@ -267,11 +293,26 @@ export class RoomScene implements GameScene {
       if (!this.alive) return;
     }
     await spell;
-    await this.elsa.face(null, 400);
+    if (!this.alive) return;
+    // phép xong: quay ra vẫy bé
+    await this.elsa.face(this.camera.position, 350);
+    void this.elsa.wave(1.4);
+    // thỉnh thoảng người nhà cổ vũ (câu 3 thì để lúc công chúa tỉnh)
+    if (i < 2 && Math.random() < 0.55) await this.cheer();
+  }
+
+  private async cheer(): Promise<void> {
+    if (!this.alive) return;
+    await familyCheer();
   }
 
   /** Câu 3 đúng: băng vỡ, công chúa tỉnh, nhún chào, vẫy, cảm ơn. */
   private async wakeUp(): Promise<void> {
+    const release = this.holdElsa();
+    try { await this.wakeUpInner(); } finally { release(); }
+  }
+
+  private async wakeUpInner(): Promise<void> {
     if (!this.alive) return;
     this.reportSaved();
     els.home.style.visibility = 'hidden';
@@ -293,6 +334,10 @@ export class RoomScene implements GameScene {
     void this.princess.wave(2.2);
     await thanks;
     if (!this.alive) return;
+    // công chúa tỉnh: Elsa vẫy mừng + 1 người nhà cổ vũ
+    void this.elsa.face(this.camera.position, 350).then(() => this.elsa.wave(1.6));
+    await this.cheer();
+    if (!this.alive) return;
     this.sparkleAround(40);
     this.princess.idleLife = true;
     els.home.style.visibility = 'visible';
@@ -306,19 +351,28 @@ export class RoomScene implements GameScene {
     this.flowRunning = true;
     showActions(false, false);
     this.princess.idleLife = false;
+    await this.princess.settle();
     try {
       for (let i = 0; i < 3; i++) {
         const intro = i === 0 ? 'challenge_start_replay' : i === 2 ? 'challenge_last' : 'challenge_next';
         const ok = await this.challenge.run(this.def.challenges[i], intro);
         if (!ok || !this.alive) return;
         void this.line(['good', 'yay', 'great'][i]);
-        const spell = this.elsa.play('spell');
-        await wait(700);
-        await this.engine.magic.beam(this.elsa.handWorld(), this.princess.chestWorld(), this.def.magicColors[0], this.def.magicColors[1], 0.8, 1.4, 1.1);
-        this.sparkleAround(60);
-        chime(CHIME);
-        void this.princess.cheer(0.8);
-        await spell;
+        const release = this.holdElsa();
+        try {
+          await this.elsa.face(this.princess.chestWorld(), 300);
+          const spell = this.elsa.play('spell');
+          await wait(700);
+          await this.engine.magic.beam(this.elsa.handWorld(), this.princess.chestWorld(), this.def.magicColors[0], this.def.magicColors[1], 0.8, 1.4, 1.1);
+          this.sparkleAround(60);
+          chime(CHIME);
+          void this.princess.cheer(0.8);
+          await spell;
+          if (!this.alive) return;
+          await this.elsa.face(this.camera.position, 300);
+          void this.elsa.wave(1.2);
+          if (Math.random() < 0.35) await this.cheer();
+        } finally { release(); }
       }
       if (!this.alive) return;
       confetti(80);
@@ -336,7 +390,62 @@ export class RoomScene implements GameScene {
   private onWrong(): void {
     if (this.thinkCooldown > 0) return;
     this.thinkCooldown = 3;
-    void this.elsa.play('think');
+    this.stopLife();
+    this.lifeT = Math.max(this.lifeT, 5);
+    // xen kẽ: suy nghĩ / lo lắng
+    void this.elsa.face(this.camera.position, 300);
+    void (this.wrongN++ % 2 ? this.elsa.worried() : this.elsa.play('think'));
+  }
+
+  // ------------------------------------------------------------------ Elsa tự hoạt động
+  /** Giữ Elsa đứng yên cho nghi lễ (làm phép, tỉnh dậy…). Trả hàm nhả. */
+  private holdElsa(): () => void {
+    this.elsaHold++;
+    this.stopLife();
+    let done = false;
+    return () => { if (!done) { done = true; this.elsaHold--; this.lifeT = 4 + Math.random() * 3; } };
+  }
+
+  private stopLife(): void {
+    this.lifeToken++;
+    this.lifeRunning = false;
+    this.elsa?.stop();
+  }
+
+  /** Mỗi 5–9 s lúc chờ bé: lướt nhẹ quanh chỗ đứng / ngắm tượng / quay ra vẫy (công chúa tỉnh thì vẫy lại). */
+  private async elsaIdle(): Promise<void> {
+    const my = ++this.lifeToken;
+    const ok = () => my === this.lifeToken && this.alive && this.elsaHold === 0;
+    this.lifeRunning = true;
+    const e = this.elsa, home = ROOM_LAYOUT.elsa, cam = this.camera.position;
+    try {
+      const r = Math.random();
+      const p = e.root.position;
+      if (r < 0.35) {
+        // lướt nhẹ trong vòng ~0.5 m quanh chỗ đứng (đi xa thì về chỗ cũ)
+        const far = Math.hypot(p.x - home.x, p.z - home.z) > 0.3;
+        const x = far ? home.x : home.x + (Math.random() - 0.6) * 0.9;
+        const z = far ? home.z : home.z + (Math.random() - 0.3) * 0.8;
+        if (!(await e.glideTo(x, z, 0.8)) || !ok()) return;
+        await e.face(Math.random() < 0.5 ? cam : this.princess.chestWorld(this._v), 500);
+      } else if (r < 0.6) {
+        // ngắm tượng một lúc rồi quay ra bé
+        await e.face(this.princess.chestWorld(this._v), 500);
+        await wait(1600 + Math.random() * 900);
+        if (!ok()) return;
+        await e.face(cam, 500);
+      } else if (r < 0.85) {
+        await e.face(cam, 400);
+        if (!ok()) return;
+        if (this.awake && this.princess.idle) void this.princess.wave(1.2);
+        await e.wave(1.5);
+      } else {
+        await e.face(null, 400);
+        if (ok()) await e.play('great');
+      }
+    } finally {
+      if (my === this.lifeToken) { this.lifeRunning = false; this.lifeT = 5 + Math.random() * 4; }
+    }
   }
 
   private sparkleAround(n: number): void {
@@ -372,6 +481,15 @@ export class RoomScene implements GameScene {
     this.thinkCooldown -= dt;
     this.princess?.update(dt);
     this.elsa?.update(dt);
+    if (this.elsa?.loaded && this.elsaHold === 0 && !this.lifeRunning && this.alive) {
+      this.lifeT -= dt;
+      if (this.lifeT <= 0) void this.elsaIdle();
+    }
+    // lấp lánh băng quanh Elsa
+    if (this.elsa && Math.random() < 0.06) {
+      const ep = this.elsa.root.position;
+      this.engine.magic.twinkle(this._v.set(ep.x + (Math.random() - 0.5) * 0.8, ep.y + 0.2 + Math.random() * 1.6, ep.z + (Math.random() - 0.5) * 0.6), Math.random() < 0.6 ? 0x4fb3ff : 0xb48bff, 1, 0.2, 0.2);
+    }
     // tuyết rơi nhẹ khi còn đóng băng
     if (!this.awake && Math.random() < 0.5 * (1 - this.melt * 0.7)) {
       this.engine.magic.emit({
@@ -382,13 +500,15 @@ export class RoomScene implements GameScene {
     // lấp lánh quanh công chúa đã tỉnh
     if (this.awake && Math.random() < 0.12) {
       const c = this.princess.root.position;
-      this.engine.magic.twinkle(new THREE.Vector3(c.x + (Math.random() - 0.5) * 1.4, c.y + Math.random() * 1.9, c.z + 0.3), Math.random() < 0.5 ? this.def.magicColors[0] : 0xffc233, 1, 0.2, 0.3);
+      this.engine.magic.twinkle(this._v.set(c.x + (Math.random() - 0.5) * 1.4, c.y + Math.random() * 1.9, c.z + 0.3), Math.random() < 0.5 ? this.def.magicColors[0] : 0xffc233, 1, 0.2, 0.3);
     }
     try { this.def.ambient?.(this.ctx, dt); } catch (e) { console.error(`[room ${this.def.id}] ambient lỗi`, e); this.def.ambient = undefined; }
   }
 
   dispose(): void {
     this.alive = false;
+    this.lifeToken++;
+    clearFamily();
     this.challenge?.dispose();
     els.home.removeEventListener('click', this.onHome);
     els.btnHall.removeEventListener('click', this.onHall);

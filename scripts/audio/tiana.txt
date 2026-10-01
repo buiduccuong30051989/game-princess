@@ -1,5 +1,5 @@
 # Phòng Tiana. key|text – giọng Linh macOS. Từ vựng (ask_/name_/token) KHÔNG viết ở đây: tự sinh từ src/rooms/tiana.ts.
 tiana_name|Đầm sen của Tiana!
-tiana_intro|Đây là đầm sen của công chúa Tiana, có đom đóm và những chú ếch xanh. Ôi, Tiana bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
-tiana_thanks|Cảm ơn Hà An đã cứu tớ! Tớ là Tiana. Tớ sẽ làm bánh thật ngon mời Hà An ăn nhé!
+tiana_intro|Đây là đầm sen của công chúa Tiana, có đom đóm và những chú ếch xanh. Ôi, Tiana bị đóng băng mất rồi! Nhím trả lời đúng ba câu để làm tan băng nhé!
+tiana_thanks|Cảm ơn Nhím đã cứu tớ! Tớ là Tiana. Tớ sẽ làm bánh thật ngon mời Nhím ăn nhé!
 tiana_count|Có mấy chú ếch? Chạm từng chú để đếm nhé.

@@ -12,6 +12,20 @@ Lâu đài bị phép ngủ: 11 công chúa đóng băng thành tượng trong p
 - Không có thua: sai lần 1 bỏ 1 đáp án, sai lần 2 đáp án đúng nhấp nháy. Ngồi im ~9 s: Elsa hỏi lại, các nút nhún (ở sảnh ~12 s: nhắc + nhún các bệ đang mở).
 - Thứ tự mở cửa: 3 phòng đầu mở sẵn, mỗi công chúa tỉnh mở thêm 1 cửa (`ROOM_ORDER` trong `src/core/progress.ts`). Tiến độ lưu ngay khi câu 3 đúng (localStorage `castle-progress-v1`).
 
+## Cá nhân hoá cho Nhím + gia đình
+
+- Elsa và công chúa gọi bé là **Nhím** (thỉnh thoảng "Hà An"). Câu thoại ở `scripts/audio-manifest.txt` và `scripts/audio/<id>.txt`.
+- **Gia đình cổ vũ** (`src/family.ts`): Ba Cường 👨, Mẹ Yến 👩, Bà Tuyết Celistia 👵, Ông Cương 👴, Bác Hanh 👩‍🦱. Bong bóng lớn trượt vào từ mép phải ~2.5 s kèm giọng đọc: thỉnh thoảng sau câu đúng, luôn có khi công chúa tỉnh và khi công chúa về sảnh; dạ hội / đại dạ hội thì cả nhà lần lượt cổ vũ. Khung ảnh "Gia đình Nhím" trên giá vẽ ở góc phải Đại sảnh: chạm vào là 1 người nhà khen.
+- **Ảnh thật thay emoji**: thả ảnh vuông (khoảng 400×400) vào `public/family/` đúng tên `ba-cuong.jpg`, `me-yen.jpg`, `ba-tuyet.jpg`, `ong-cuong.jpg`, `bac-hanh.jpg` (nhận cả .jpeg/.png/.webp). Thiếu ảnh nào thì người đó dùng emoji. Danh sách ảnh do `vite.config.ts` quét lúc chạy (module ảo `virtual:family-photos`) nên không có lỗi 404; đang `pnpm dev` thì thêm/xoá ảnh trang tự tải lại (sửa `vite.config.ts` thì phải tắt bật lại dev server).
+- Đổi câu khen: sửa dòng `fam_*` trong `scripts/audio-manifest.txt` + chữ hiện trong `FAMILY` (`src/family.ts`), xoá m4a cũ, chạy `gen-audio.sh`.
+
+## Elsa và công chúa "sống"
+
+- Đại sảnh, lúc rảnh (không nghi lễ, không đang mở cửa) cứ 6–12 s Elsa làm 1 việc: lướt trên vệt băng tới thăm 1 bệ (công chúa đã tỉnh thì 2 bạn vẫy nhau), lướt ra trước vẫy bé, vẫy tại chỗ, xoay tung tuyết, múa 1 clip. Bé chạm bất kỳ đâu: Elsa dừng và quay ra vẫy; chạm Elsa: xoay + cười. Tuyết ❄️ rơi lác đác, lấp lánh quanh Elsa.
+- Trong phòng: vào phòng Elsa vẫy chào; lúc chờ bé thì lướt nhẹ / ngắm tượng / quay ra vẫy; đúng → làm phép rồi vẫy; sai → xen kẽ suy nghĩ / lo lắng.
+- Không có clip đi / vẫy (`level_wave_placeholder` y hệt idle): **lướt** = dời root theo frame + nghiêng + nhấp nhô + hạt và bông tuyết in sàn (pool 22 mesh); **vẫy** = xoay cánh tay phải cộng lên clip idle (ngắm hướng trong hệ thân người, trọng số mượt). Xem `src/elsa.ts`.
+- Công chúa đã tỉnh: mỗi 8–15 s (lệch pha từng người) 1 động tác ngẫu nhiên không lặp: nhìn quanh, vẫy, nhún chào, xoay váy, nghiêng đầu điệu đà (`tilt` trong `pose.ts`), mừng. Mọi trọng số tween nên không giật; dạ hội tắt động tác lặt vặt và chờ động tác dở xong (`settle()`).
+
 ## Chạy
 
 ```bash
@@ -60,7 +74,8 @@ src/spell.ts           đánh vần GDPT 2018 tự động, chạy cả trong no
 src/pose.ts            tạo dáng theo xương cho 12 tượng (hạ tay, thở, vẫy, nhún chào, dang tay, mừng, nhìn)
 src/ice.ts             material băng (fresnel, nứt, lấp lánh) tan 3 nấc, pha lê chân, vỡ tung
 src/princess.ts        PrincessActor = model + Poser + Ice + chuỗi tỉnh dậy
-src/elsa.ts            Elsa dẫn đường (elsa_anim.glb, bỏ track position + neo hông)
+src/elsa.ts            Elsa dẫn đường (elsa_anim.glb, bỏ track position + neo hông) + lướt, vẫy thủ công, xoay
+src/family.ts          gia đình Nhím: bong bóng cổ vũ (ảnh public/family/ hoặc emoji) + giọng đọc
 src/challenge.ts       A1 / A2 / B1, sai 1 bỏ 1 đáp án, sai 2 nhấp nháy, nhắc khi ngồi im
 src/audio.ts           WebAudio (mở khoá iPad, tự resume sau khoá màn), play luôn resolve, hộp nhạc valse
 scripts/audio-manifest.txt  câu dùng chung; scripts/audio/<id>.txt câu riêng phòng; _words.gen.txt tự sinh
