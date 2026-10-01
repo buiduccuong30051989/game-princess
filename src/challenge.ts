@@ -8,6 +8,8 @@ import type { WordEntry } from './room/words.ts';
 import type { ChallengeKind } from './room/types.ts';
 
 export const NUMBER_AUDIO = ['', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10'];
+/** bé ngồi im quá lâu → nhắc lại câu hỏi + nhún các nút */
+const IDLE_MS = 9000;
 
 export interface ChallengeHooks {
   /** bé chọn sai (Elsa suy nghĩ) */
@@ -23,6 +25,8 @@ export class Challenge {
   current: string | null = null;
   private aborted = false;
   private skipResolve: (() => void) | null = null;
+  private idleTimer = 0;
+  private idleFn: (() => void) | null = null;
   private readonly onRepeat = () => this.repeatFn?.();
   private readonly words: WordEntry[];
   private readonly count: { emoji: string; audio: string; range: [number, number] };
@@ -42,7 +46,7 @@ export class Challenge {
   private async say(key: string): Promise<void> { this.ck(); await play(key); this.ck(); }
 
   async run(kind: ChallengeKind, introKey?: string): Promise<boolean> {
-    this.ck();
+    if (this.aborted) return false;
     const skip = new Promise<'skip'>((r) => { this.skipResolve = () => r('skip'); });
     try {
       if (introKey) await this.say(introKey);
@@ -60,6 +64,7 @@ export class Challenge {
     } finally {
       this.skipResolve = null;
       this.repeatFn = null;
+      this.setIdle(null);
       showPanel(false);
     }
   }
@@ -69,6 +74,7 @@ export class Challenge {
 
   abort(): void {
     this.aborted = true;
+    this.setIdle(null);
     stopSpeech();
     this.skipResolve?.();
     showPanel(false);
@@ -77,6 +83,18 @@ export class Challenge {
   dispose(): void {
     this.abort();
     els.repeat.removeEventListener('click', this.onRepeat);
+  }
+
+  /** Hẹn giờ nhắc khi bé không chạm gì: fn chạy mỗi IDLE_MS; null = tắt. */
+  private setIdle(fn: (() => void) | null): void {
+    this.idleFn = fn;
+    this.kickIdle();
+  }
+  /** Bé vừa chạm: đếm lại từ đầu. */
+  private kickIdle(): void {
+    clearTimeout(this.idleTimer);
+    if (!this.idleFn || this.aborted) return;
+    this.idleTimer = window.setTimeout(() => { this.idleFn?.(); this.kickIdle(); }, IDLE_MS);
   }
 
   private pickWord(filter?: (w: WordEntry) => boolean): WordEntry {
@@ -92,15 +110,17 @@ export class Challenge {
    * Chọn đúng → bỏ hint, tô xanh; sai → lần 1 bỏ 1 đáp án + nhắc lại câu hỏi, lần 2 nhấp nháy đáp án đúng.
    * Câu hỏi phát bằng speakSequence nên chạm đúng giữa chừng (stopSpeech) là cắt luôn phần còn lại.
    */
-  private pickLoop(items: { label: string; value: string }[], target: string, askKeys: string[]): Promise<void> {
+  private pickLoop(items: { label: string; value: string; audio?: string }[], target: string, askKeys: string[]): Promise<void> {
     let wrong = 0;
     let busy = false;
+    let solved = false;
     const ask = () => speakSequence(askKeys, undefined, 150);
     this.repeatFn = () => void ask();
     this.current = target;
     return new Promise((resolve) => {
       const buttons = showOptions(items, async (value, btn) => {
-        if (this.aborted) return;
+        if (this.aborted || solved) return;
+        this.kickIdle();
         if (value !== target) {
           if (busy) return;
           busy = true;
@@ -109,21 +129,31 @@ export class Challenge {
           wobbleEl(btn);
           btn.classList.add('gone');
           this.hooks.onWrong();
+          // đọc âm của nút vừa chạm nhầm (bé chưa biết đọc: nối chữ/số với âm)
+          const said = items.find((it) => it.value === value)?.audio;
+          const pre = said ? [said] : [];
           if (wrong === 1) {
-            await speakSequence(['retry', ...askKeys], undefined, 150);
+            await speakSequence([...pre, 'retry', ...askKeys], undefined, 150);
           } else {
             buttons.find((b) => b.dataset.value === target)?.classList.add('hint');
-            await speakSequence(['hint_last'], undefined, 150);
+            await speakSequence([...pre, 'hint_last'], undefined, 150);
           }
           busy = false;
           return;
         }
+        solved = true;
+        this.setIdle(null);
         stopSpeech();
         buttons.forEach((b) => { b.classList.remove('hint'); if (b !== btn) b.classList.add('gone'); });
         btn.classList.add('correct');
         sfx('sfx_win', 0.5);
         this.current = null;
         resolve();
+      });
+      // ngồi im lâu: hỏi lại + nhún các nút còn lại
+      this.setIdle(() => {
+        void ask();
+        buttons.forEach((b) => { if (!b.classList.contains('gone')) wobbleEl(b); });
       });
       void ask();
     });
@@ -148,7 +178,7 @@ export class Challenge {
     showWord(target.word, [], false, f.index);
     els.wordEmoji.textContent = target.emoji;
     els.wordEmoji.hidden = false;
-    await this.pickLoop(letters.map((l) => ({ label: l, value: l })), correct, [target.nameKey, 'ask_fill']);
+    await this.pickLoop(letters.map((l) => ({ label: l, value: l, audio: f.letterKeys[l] })), correct, [target.nameKey, 'ask_fill']);
     els.wordEmoji.hidden = true;
     showWord(target.word, [f.index], false);
     await this.say('right');
@@ -161,7 +191,8 @@ export class Challenge {
     els.wordEmoji.textContent = w.emoji;
     els.wordEmoji.hidden = false;
     showWord(w.word, all, true);
-    this.repeatFn = () => void this.spellOut(w).catch(() => {});
+    // đang đánh vần: 🔊 không làm gì (chạy spellOut thứ 2 sẽ chồng tiếng + ẩn chữ giữa chừng)
+    this.repeatFn = () => {};
     const ok = await speakSequence([w.nameKey, ...w.tokens.map((t) => t.audio)], (i) => {
       if (i === 0) showWord(w.word, all, true);
       else showWord(w.word, w.tokens[i - 1].lit, false);
@@ -181,13 +212,21 @@ export class Challenge {
     await new Promise<void>((resolve) => {
       showGemRow(n, this.count.emoji, async (btn) => {
         if (this.aborted) return;
-        if (btn.classList.contains('done')) { void play(NUMBER_AUDIO[Math.min(counted, 10)] || 'n1'); return; }
+        this.kickIdle();
+        // chạm lại vật đã đếm: đọc đúng số của CHÍNH vật đó
+        if (btn.classList.contains('done')) { void play(NUMBER_AUDIO[Number(btn.dataset.n)] || 'n1'); wobbleEl(btn); return; }
         btn.classList.add('done');
         counted++;
+        btn.dataset.n = String(Math.min(counted, 10));
         sfx('sfx_pop', 0.5);
         setCounter(counted);
         await play(NUMBER_AUDIO[counted]);
-        if (counted === n) { await wait(250); resolve(); }
+        if (counted === n) { this.setIdle(null); await wait(250); resolve(); }
+      });
+      this.setIdle(() => {
+        void speakSequence([this.count.audio]);
+        const next = [...els.gemrow.querySelectorAll<HTMLElement>('.gem:not(.done)')][0];
+        if (next) wobbleEl(next);
       });
       void speakSequence([this.count.audio]);
     });
@@ -197,7 +236,7 @@ export class Challenge {
       const d = n + Math.floor(Math.random() * 5) - 2;
       if (d >= 1 && d <= 10) opts.add(d);
     }
-    const list = [...opts].sort(() => Math.random() - 0.5).map((v) => ({ label: String(v), value: String(v) }));
+    const list = [...opts].sort(() => Math.random() - 0.5).map((v) => ({ label: String(v), value: String(v), audio: NUMBER_AUDIO[v] }));
     await this.pickLoop(list, String(n), ['ask_pick_number']);
     await this.say(NUMBER_AUDIO[n]);
     await this.say('right');

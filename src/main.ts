@@ -3,7 +3,7 @@
 import { Engine } from './core/engine.ts';
 import { PARAMS } from './core/params.ts';
 import { loadProgress, markSaved, ROOM_ORDER } from './core/progress.ts';
-import { prefetch } from './core/assets.ts';
+import { prefetch, lodModel } from './core/assets.ts';
 import { ROOMS, getRoom } from './rooms/index.ts';
 import { HallScene } from './hall.ts';
 import { RoomScene } from './room/RoomScene.ts';
@@ -15,6 +15,8 @@ import type { RoomId } from './room/types.ts';
 
 const engine = new Engine(document.getElementById('app')!, els.fade);
 engine.start();
+// màn lỗi (tải model hỏng…): quay về sảnh thay vì kẹt
+engine.onSceneError = () => void goHall();
 const progress = loadProgress();
 let justSaved: RoomId | null = null;
 setStars(progress.saved.length, ROOM_ORDER.length);
@@ -53,7 +55,7 @@ async function goRoom(id: RoomId): Promise<void> {
 
 function boot(): void {
   // tải trước những thứ màn đầu cần
-  prefetch([ELSA_MODEL, ...ROOMS.slice(0, 4).map((r) => r.princessModel)]);
+  prefetch([ELSA_MODEL, ...ROOMS.slice(0, 4).map((r) => lodModel(r.princessModel))]);
   if (PARAMS.room) {
     // xem thử 1 phòng: bỏ màn chào; chạm đầu tiên ở bất kỳ đâu sẽ mở tiếng
     els.start.hidden = true;

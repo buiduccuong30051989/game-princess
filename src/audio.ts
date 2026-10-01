@@ -35,6 +35,18 @@ export function unlockAudio(): void {
     unlocked = true;
   }
 }
+/**
+ * iPad: khoá màn hình / chuyển app / Siri → context 'interrupted'/'suspended', không tự chạy lại → game câm.
+ * Mỗi lần quay lại trang hoặc chạm bất kỳ đâu: resume().
+ */
+function resumeIfNeeded(): void {
+  if (ctx && unlocked && ctx.state !== 'running') void ctx.resume().catch(() => { /* chờ chạm sau */ });
+}
+if (typeof window !== 'undefined') {
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeIfNeeded(); });
+  window.addEventListener('pointerdown', resumeIfNeeded, { capture: true });
+  window.addEventListener('focus', resumeIfNeeded);
+}
 export function isUnlocked(): boolean { return unlocked && ctx?.state === 'running'; }
 
 const extOf = (key: string) => (key.startsWith('sfx_') ? 'ogg' : 'm4a');

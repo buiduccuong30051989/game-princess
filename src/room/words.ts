@@ -1,5 +1,5 @@
 // Từ vựng phòng → dữ liệu bài tập (token đánh vần + audio key) + kiểm lỗi. Node-safe (không DOM, không three).
-import { spell, defaultAsk, wordId, type SpellToken, type AudioLine } from '../spell.ts';
+import { spell, defaultAsk, wordId, letterAudio, type SpellToken, type AudioLine } from '../spell.ts';
 import type { RoomDef, RoomWord } from './types.ts';
 
 export interface WordEntry {
@@ -8,7 +8,8 @@ export interface WordEntry {
   emoji: string;
   name: string;
   tokens: SpellToken[];
-  fill?: { index: number; distractors: string[] };
+  /** letterKeys: chữ → audio key âm của chữ đó (đọc khi bé chạm nhầm) */
+  fill?: { index: number; distractors: string[]; letterKeys: Record<string, string> };
   askKey: string;       // ask_<id>
   nameKey: string;      // name_<id>
 }
@@ -17,9 +18,20 @@ export function buildWord(w: RoomWord): WordEntry {
   const s = spell(w.word);
   return {
     id: s.id, word: s.word, emoji: w.emoji, name: w.name, tokens: s.tokens,
-    fill: w.fill ? { index: w.fill.index, distractors: [...w.fill.distractors] } : undefined,
+    fill: w.fill ? { index: w.fill.index, distractors: [...w.fill.distractors], letterKeys: fillLetterKeys(s.word, w.fill) } : undefined,
     askKey: `ask_${s.id}`, nameKey: `name_${s.id}`,
   };
+}
+
+function fillLetterLines(word: string, fill: { index: number; distractors: readonly string[] }): AudioLine[] {
+  const correct = Array.from(word)[fill.index];
+  return [correct, ...fill.distractors].map((ch) => letterAudio(ch)).filter((x): x is AudioLine => !!x);
+}
+function fillLetterKeys(word: string, fill: { index: number; distractors: readonly string[] }): Record<string, string> {
+  const out: Record<string, string> = {};
+  const correct = Array.from(word)[fill.index];
+  for (const ch of [correct, ...fill.distractors]) { const a = letterAudio(ch); if (a) out[ch] = a[0]; }
+  return out;
 }
 
 /** Mọi dòng audio (key|text) mà từ vựng của phòng cần: câu hỏi, tên, token đánh vần. */
@@ -30,6 +42,7 @@ export function wordAudioLines(words: RoomWord[]): AudioLine[] {
     out.set(`ask_${s.id}`, w.ask ?? defaultAsk(w.name));
     out.set(`name_${s.id}`, w.name);
     for (const [k, t] of s.lines) out.set(k, t);
+    if (w.fill) for (const [k, t] of fillLetterLines(s.word, w.fill)) out.set(k, t);
   }
   return [...out];
 }
@@ -65,6 +78,7 @@ export function validateRoom(def: RoomDef): string[] {
         for (const d of distractors) {
           if (Array.from(d).length !== 1) errs.push(`từ "${w.word}": chữ nhiễu "${d}" phải là 1 ký tự`);
           if (d === correct) errs.push(`từ "${w.word}": chữ nhiễu "${d}" trùng chữ đúng`);
+          if (!letterAudio(d)) errs.push(`từ "${w.word}": chữ nhiễu "${d}" không có âm để đọc`);
         }
         if (new Set(distractors).size !== distractors.length) errs.push(`từ "${w.word}": 2 chữ nhiễu trùng nhau`);
         const onsetLen = Array.from(s.onset).length;

@@ -2,7 +2,7 @@
 // chạy 3 thử thách → mỗi câu đúng Elsa làm phép, băng tan 1 nấc → câu 3: băng vỡ, công chúa tỉnh, cảm ơn.
 import * as THREE from 'three';
 import type { Engine, GameScene } from '../core/engine.ts';
-import { instance, emojiSprite, disposeTree } from '../core/assets.ts';
+import { instance, emojiSprite, disposeTree, evictGLB } from '../core/assets.ts';
 import { PrincessActor } from '../princess.ts';
 import { ElsaGuide } from '../elsa.ts';
 import { Challenge } from '../challenge.ts';
@@ -61,6 +61,7 @@ export class RoomScene implements GameScene {
   private thinkCooldown = 0;
   private flowRunning = false;
   private lastLine: string | null = null;
+  private savedReported = false;
   private readonly onHome = () => this.exit();
   private readonly onHall = () => this.exit();
   private readonly onAgain = () => void this.replay();
@@ -115,7 +116,7 @@ export class RoomScene implements GameScene {
     await Promise.all([
       Promise.resolve(def.buildScene(this.ctx)).catch((e) => console.error(`[room ${def.id}] buildScene lỗi`, e)),
       this.princess.load(frozen, startMelt),
-      this.elsa.load(),
+      this.elsa.load().catch((e) => console.error('[room] không tải được Elsa', e)),
     ]);
     this.princess.idleLife = false;
     if (!frozen) { this.awake = true; this.melt = 1; this.princess.setAwake(); }
@@ -134,7 +135,7 @@ export class RoomScene implements GameScene {
     const key = new THREE.DirectionalLight(0xfff3e0, 2.1);
     key.position.set(3, 7, 6);
     key.castShadow = true;
-    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.mapSize.set(1024, 1024); // iPad: 2048² PCF quá nặng
     const sc = key.shadow.camera;
     sc.left = -6; sc.right = 6; sc.top = 6; sc.bottom = -2; sc.near = 1; sc.far = 25;
     key.shadow.bias = -0.0004; key.shadow.normalBias = 0.03;
@@ -226,10 +227,21 @@ export class RoomScene implements GameScene {
       const intro = i === 0 ? 'challenge_start' : i === 2 ? 'challenge_last' : 'challenge_next';
       const ok = await this.challenge.run(this.def.challenges[i], intro);
       if (!ok || !this.alive) return;
+      if (i === 2) {
+        // LƯU NGAY khi câu 3 đúng (màn mừng + tỉnh dậy dài ~8 s; bé bấm về giữa chừng không được mất công)
+        this.reportSaved();
+        els.home.style.visibility = 'hidden';
+      }
       await this.celebrateCorrect(i);
       if (!this.alive) return;
     }
     await this.wakeUp();
+  }
+
+  private reportSaved(): void {
+    if (this.savedReported) return;
+    this.savedReported = true;
+    this.opts.onSaved(this.def.id);
   }
 
   /** Câu đúng: Elsa làm phép, tia phép bay tới tượng, băng tan 1 nấc. */
@@ -250,7 +262,9 @@ export class RoomScene implements GameScene {
       void tween(1300, (k) => { this.melt = m0 + (1 / 3) * k; this.applyMeltLook(); }, easeInOutSine);
       await this.princess.ice?.meltStep(this.engine.magic, [c1, 0x7fd0ff]);
       if (!this.alive) return;
-      void this.line(i === 0 ? 'melt_1' : 'melt_2');
+      // chờ câu "băng tan" đọc HẾT (câu hỏi kế tiếp sẽ cắt tiếng đang phát)
+      await Promise.all([this.line(i === 0 ? 'melt_1' : 'melt_2'), spell]);
+      if (!this.alive) return;
     }
     await spell;
     await this.elsa.face(null, 400);
@@ -259,6 +273,8 @@ export class RoomScene implements GameScene {
   /** Câu 3 đúng: băng vỡ, công chúa tỉnh, nhún chào, vẫy, cảm ơn. */
   private async wakeUp(): Promise<void> {
     if (!this.alive) return;
+    this.reportSaved();
+    els.home.style.visibility = 'hidden';
     const m0 = this.melt;
     void tween(900, (k) => { this.melt = m0 + (1 - m0) * k; this.applyMeltLook(); });
     this.awake = true;
@@ -269,9 +285,7 @@ export class RoomScene implements GameScene {
     void this.elsa.play('celebrate');
     await wake;
     if (!this.alive) return;
-    this.opts.onSaved(this.def.id);
-    void this.line('wake');
-    await wait(1200);
+    await this.line('wake');
     if (!this.alive) return;
     const thanks = this.line(this.def.audio.thanks);
     await this.princess.curtsy();
@@ -281,6 +295,7 @@ export class RoomScene implements GameScene {
     if (!this.alive) return;
     this.sparkleAround(40);
     this.princess.idleLife = true;
+    els.home.style.visibility = 'visible';
     showActions(true, true);
     void this.line('tap_home');
   }
@@ -386,6 +401,8 @@ export class RoomScene implements GameScene {
     this.princess?.dispose();
     this.elsa?.dispose();
     disposeTree(this.scene);
+    // tượng full-res chỉ phòng này dùng (sảnh dùng bản lod/) → trả bộ nhớ GPU
+    evictGLB(this.def.princessModel);
   }
 
   // ------------------------------------------------------------------ debug

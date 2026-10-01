@@ -187,7 +187,7 @@ Mọi hàm trả `Object3D` chưa add. Đơn vị mét.
 | Đồ đạc | `shelf`, `books`, `painting(w, h, emoji | draw)`, `flowerPot`, `candle` + `flicker`, `paperLantern`, `fairyLights(a, b)`, `bunting(a, b, colors)`, `glow(color, size, opacity)` (quầng sáng) |
 | Tiện ích | `onArc(obj, r, angle)` đặt quanh cung tròn quay vào tâm, `bob(obj, t, amp, speed)` bồng bềnh, `shadows(obj)` bật bóng |
 
-Model có sẵn trong `public/models` (xem `CREDITS.md`, `ASSETS.md`): `lanterns.glb`, `pascal.glb`, `olaf.glb`, `olaf_small.glb`, `wand_star.glb`, `slipper.glb` (dùng `keep: ['heel']`), `tail_ariel.glb`, `dress_*.glb`, `hair_*.glb`, `wings_tinkerbell.glb`, Kenney `tree_default/tree_fat/flower_*A/plant_bush` (low-poly, hợp cảnh ngoài trời hơn trong nhà). Kiểm model lẻ: `http://localhost:5182/viewer.html?model=models/<file>.glb&yaw=3.14`.
+Model có sẵn trong `public/models` (xem `CREDITS.md`, `ASSETS.md`): `lanterns.glb`, `pascal.glb`, `olaf.glb`, `wand_star.glb`, `slipper.glb` (dùng `keep: ['heel']`), Kenney `tree_default/tree_fat/flower_*A/plant_bush` (low-poly, hợp cảnh ngoài trời hơn trong nhà). Model chưa dùng (`olaf_small`, `tail_ariel`, `dress_*`, `hair_*`, `wings_tinkerbell`…) nằm ở `assets-raw/unused-models/` để bản build không chở theo; cần thì chép lại vào `public/models`. Kiểm model lẻ: `http://localhost:5182/viewer.html?model=models/<file>.glb&yaw=3.14`.
 
 ---
 

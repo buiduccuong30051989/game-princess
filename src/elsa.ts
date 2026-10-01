@@ -1,10 +1,12 @@
 // Elsa dẫn đường: model elsa_anim.glb (Frozen Free Fall, 20 clip) – nhân vật DUY NHẤT có animation thật.
 // Rig game có root motion + gốc lệch tâm: BẮT BUỘC bỏ mọi track '.position' và neo xương hông về tâm mỗi frame.
 import * as THREE from 'three';
-import { instance } from './core/assets.ts';
+import { instance, disposeSkeletons } from './core/assets.ts';
 import { tween, easeInOutSine } from './tween.ts';
 
 export const ELSA_MODEL = 'elsa_anim.glb';
+const _hw = new THREE.Vector3();
+const _target = new THREE.Vector3();
 
 /** Tên clip dùng trong game (xem danh sách đủ 20 clip ở README). */
 export const ELSA_CLIPS = {
@@ -118,14 +120,21 @@ export class ElsaGuide {
     this.mixer.update(dt);
     if (this.anchor) {
       // neo hông: kéo hông về trục giữa (x/z) và độ cao nghỉ
-      this.model.updateMatrixWorld(true);
-      const hw = this.anchor.bone.getWorldPosition(new THREE.Vector3());
-      const target = this.turn.localToWorld(new THREE.Vector3(0, this.anchor.restY, 0));
+      // chỉ cập nhật chuỗi cha của xương hông (không cả cây model); vector dùng lại, không cấp phát mỗi frame
+      this.anchor.bone.updateWorldMatrix(true, false);
+      const hw = this.anchor.bone.getWorldPosition(_hw);
+      const target = this.turn.localToWorld(_target.set(0, this.anchor.restY, 0));
       const parent = this.model.parent!;
-      const d = parent.worldToLocal(target.clone()).sub(parent.worldToLocal(hw.clone()));
-      this.model.position.add(d);
+      parent.worldToLocal(target);
+      parent.worldToLocal(hw);
+      this.model.position.add(target.sub(hw));
     }
   }
 
-  dispose(): void { this.mixer?.stopAllAction(); this.root.removeFromParent(); }
+  dispose(): void {
+    this.mixer?.stopAllAction();
+    if (this.mixer && this.model) this.mixer.uncacheRoot(this.model);
+    disposeSkeletons(this.root);
+    this.root.removeFromParent();
+  }
 }

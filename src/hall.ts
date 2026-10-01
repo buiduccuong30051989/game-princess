@@ -3,7 +3,7 @@
 // Cứu đủ 3/6/9/11 → dạ hội mini (đèn màu, nhạc hộp, pháo hoa, công chúa xoay váy); 11 → Elsa thay váy băng Frozen 1.
 import * as THREE from 'three';
 import type { Engine, GameScene } from './core/engine.ts';
-import { emojiTexture, disposeTree, prefetch } from './core/assets.ts';
+import { emojiTexture, disposeTree, prefetch, lodModel } from './core/assets.ts';
 import { type Progress, isUnlocked, isSaved, markBall, ROOM_ORDER, BALL_MILESTONES } from './core/progress.ts';
 import { ROOMS } from './rooms/index.ts';
 import { princessInfo } from './rooms/princesses.ts';
@@ -71,6 +71,12 @@ export class HallScene implements GameScene {
   private chandelier!: THREE.Group;
   private discoLights: THREE.PointLight[] = [];
   private busy = true;
+  /** đã chạm 1 cửa, đang mở phòng: chặn mọi chạm khác (flow() không được nhả cờ này) */
+  private opening = false;
+  /** cửa vừa được mở nhờ công chúa mới cứu: vẽ như còn khoá tới lúc arrival() bật nó lên */
+  private pendingDoor: RoomId | null = null;
+  /** giây bé chưa chạm gì (nhắc lại khi quá lâu) */
+  private idleT = 0;
   private alive = true;
   private time = 0;
   private lastLine: string | null = null;
@@ -80,6 +86,15 @@ export class HallScene implements GameScene {
   private constructor(engine: Engine, opts: HallOpts) {
     this.engine = engine;
     this.opts = opts;
+    if (opts.arrival) {
+      const id = ROOM_ORDER[3 + opts.progress.saved.length - 1];
+      if (id && !isSaved(opts.progress, id)) this.pendingDoor = id;
+    }
+  }
+
+  /** cửa đang mở và chưa cứu (tính cả cửa đang chờ màn chào đón bật lên) */
+  private isOpen(id: RoomId): boolean {
+    return id !== this.pendingDoor && isUnlocked(this.opts.progress, id);
   }
 
   static async create(engine: Engine, opts: HallOpts): Promise<HallScene> {
@@ -102,15 +117,15 @@ export class HallScene implements GameScene {
     this.elsa = new ElsaGuide(1.9);
     this.elsa.root.position.set(STAGE.x, STAGE_H, STAGE.z + 0.2);
     this.scene.add(this.elsa.root);
-    const jobs: Promise<unknown>[] = [this.elsa.load()];
-    if (this.finaleDone) jobs.push(this.loadElsaF1(true));
+    const jobs: Promise<unknown>[] = [this.elsa.load().catch((e) => console.error('[hall] không tải được Elsa', e))];
+    if (this.finaleDone) jobs.push(this.loadElsaF1(true).catch((e) => console.error('[hall] không tải được Elsa F1', e)));
     // tải trước tượng các bệ gần nhất (đã mở + vừa cứu); còn lại tải dần sau khi hiện sảnh
     for (const s of this.slots) {
       const p = this.opts.progress;
       if (s.index < 4 || isSaved(p, s.def.id)) jobs.push(this.loadStatue(s));
     }
     await Promise.all(jobs);
-    if (this.finaleDone) this.elsa.root.visible = false;
+    if (this.finaleDone && this.elsaF1) this.elsa.root.visible = false;
     prefetch([ELSA_MODEL]);
   }
 
@@ -120,7 +135,7 @@ export class HallScene implements GameScene {
     const key = new THREE.DirectionalLight(0xfff3e6, 1.9);
     key.position.set(4, 12, 9);
     key.castShadow = true;
-    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.mapSize.set(1024, 1024); // iPad: 2048² PCF quá nặng
     const sc = key.shadow.camera;
     sc.left = -12; sc.right = 12; sc.top = 10; sc.bottom = -10; sc.near = 2; sc.far = 40;
     key.shadow.bias = -0.0005; key.shadow.normalBias = 0.04;
@@ -236,7 +251,8 @@ export class HallScene implements GameScene {
       leaf.rotation.y = -a;
       g.add(leaf);
     }
-    g.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) m.castShadow = true; });
+    // chỉ chân + chậu đổ bóng (50 quả cầu hoa đổ bóng = 50 draw call thừa trong pass bóng)
+    foot.castShadow = bowl.castShadow = true;
     g.position.set(x, 0, z);
     return g;
   }
@@ -417,7 +433,7 @@ export class HallScene implements GameScene {
   /** Cập nhật huy hiệu, màu cửa, vòng sáng theo trạng thái khoá / mở / đã cứu. */
   private refreshSlot(s: Slot): void {
     const p = this.opts.progress;
-    const saved = isSaved(p, s.def.id), open = isUnlocked(p, s.def.id);
+    const saved = isSaved(p, s.def.id), open = this.isOpen(s.def.id);
     const state = saved ? 'saved' : open ? 'open' : 'locked';
     if (s.badgeState !== state) {
       s.badgeState = state;
@@ -456,7 +472,8 @@ export class HallScene implements GameScene {
     if (s.loading) return s.loading;
     const saved = isSaved(this.opts.progress, s.def.id);
     const info = princessInfo(s.def.princessModel);
-    const actor = new PrincessActor({ model: s.def.princessModel, height: STATUE_H, tuning: { ...info?.tuning, ...s.def.pose }, hide: info?.hide, hideBones: info?.hideBones });
+    // bản nhẹ (texture 512): 11 tượng full-res ≈ 87 MB texture GPU, quá nặng cho iPad
+    const actor = new PrincessActor({ model: lodModel(s.def.princessModel), height: STATUE_H, tuning: { ...info?.tuning, ...s.def.pose }, hide: info?.hide, hideBones: info?.hideBones });
     s.loading = actor.load(!saved, 0).then(() => {
       if (!this.alive) { actor.dispose(); return; }
       actor.root.position.y = PED_H;
@@ -464,6 +481,8 @@ export class HallScene implements GameScene {
       s.base.add(actor.root);
       s.actor = actor;
       if (popIn) void actor.popIn(500);
+      // công chúa vừa cứu: giấu tới lúc arrival() cho hiện ra (không thì đứng sẵn rồi giật nhỏ lại)
+      else if (s.def.id === this.opts.arrival) actor.root.scale.setScalar(0.001);
     }).catch((e) => { console.error('[hall] không tải được', s.def.princessModel, e); });
     return s.loading;
   }
@@ -472,6 +491,7 @@ export class HallScene implements GameScene {
     const info = princessInfo('p_elsa_f1.glb');
     const a = new PrincessActor({ model: 'p_elsa_f1.glb', height: 1.85, tuning: info?.tuning });
     await a.load(!awake);
+    if (!this.alive) { a.dispose(); throw new Error('hall disposed'); }
     a.root.position.set(STAGE.x, STAGE_H, STAGE.z + 0.2);
     a.idleLife = true;
     this.scene.add(a.root);
@@ -503,10 +523,12 @@ export class HallScene implements GameScene {
     void this.flow();
   }
 
+  private speaking = 0;
   private async line(key: string): Promise<void> {
     if (!this.alive) return;
     this.lastLine = key;
-    await play(key);
+    this.speaking++;
+    try { await play(key); } finally { this.speaking--; this.idleT = 0; }
   }
 
   private async flow(): Promise<void> {
@@ -565,6 +587,7 @@ export class HallScene implements GameScene {
     const newly = ROOM_ORDER[3 + this.opts.progress.saved.length - 1];
     const ns = newly ? this.slots.find((x) => x.def.id === newly) : undefined;
     if (ns && !isSaved(this.opts.progress, ns.def.id)) {
+      this.pendingDoor = null;
       this.refreshSlot(ns);
       const dp = ns.door.localToWorld(new THREE.Vector3(0, 1.6, 0.3));
       this.engine.magic.burst(dp, 120, ns.def.palette.primary, 2.2, 0.55, 1.5, -1.2);
@@ -576,7 +599,8 @@ export class HallScene implements GameScene {
   }
 
   onTap(ndc: THREE.Vector2): void {
-    if (this.busy || !this.alive) return;
+    this.idleT = 0;
+    if (this.busy || this.opening || !this.alive) return;
     this.raycaster.setFromCamera(ndc, this.camera);
     const targets: THREE.Object3D[] = [];
     for (const s of this.slots) targets.push(s.hit, s.badge);
@@ -592,9 +616,11 @@ export class HallScene implements GameScene {
       sfx('sfx_soft', 0.5);
       void tween(450, (k) => { s.badge.position.x = Math.sin(k * Math.PI * 6) * 0.12 * (1 - k); });
       if (this.elsaF1) void this.elsaF1.cheer(0.4); else void this.elsa.play('think');
+      this.bumpOpenBadges();
       await this.line('hall_locked');
       return;
     }
+    this.opening = true;
     this.busy = true;
     stopSpeech();
     sfx('sfx_tap', 0.6);
@@ -617,6 +643,14 @@ export class HallScene implements GameScene {
     await Promise.race([nameLine, wait(1800)]);
     if (!this.alive) return;
     this.opts.onOpenRoom(s.def.id);
+  }
+
+  /** Nhún huy hiệu các bệ đang mở, chưa cứu: chỉ cho bé biết chạm vào đâu. */
+  private bumpOpenBadges(): void {
+    for (const o of this.slots) {
+      if (!this.isOpen(o.def.id) || isSaved(this.opts.progress, o.def.id)) continue;
+      void tween(800, (k) => o.badge.scale.setScalar(BADGE * (1 + Math.sin(k * Math.PI) * 0.6)), easeOutBack);
+    }
   }
 
   // ------------------------------------------------------------------ dạ hội
@@ -685,7 +719,11 @@ export class HallScene implements GameScene {
   /** Dạ hội cuối: Elsa dẫn đường xoay trong cột tuyết rồi hoá thành Elsa váy băng Frozen 1. */
   private async finaleChange(): Promise<void> {
     const center = new THREE.Vector3(STAGE.x, STAGE_H + 1, STAGE.z + 0.2);
-    const f1 = this.loadElsaF1(true);
+    // tải váy mới TRƯỚC khi giấu Elsa: lỗi tải thì giữ nguyên Elsa, bỏ màn thay váy
+    let f1: PrincessActor;
+    try { f1 = await this.loadElsaF1(true); } catch (e) { console.error('[hall] không tải được Elsa F1', e); return; }
+    if (!this.alive) return;
+    f1.root.visible = false;
     void tween(2400, (k) => {
       for (let i = 0; i < 6; i++) {
         const a = k * Math.PI * 12 + i * (Math.PI / 3);
@@ -696,7 +734,8 @@ export class HallScene implements GameScene {
     const elsaRoot = this.elsa.root;
     await tween(500, (k) => elsaRoot.scale.setScalar(Math.max(0.001, 1 - k)));
     elsaRoot.visible = false;
-    const a = await f1;
+    const a = f1;
+    a.root.visible = true;
     if (!this.alive) return;
     this.engine.magic.burst(center, 260, 0x2f9df5, 3.5, 0.6, 1.8, -1.2);
     this.engine.magic.burst(center, 140, 0xffffff, 2.4, 0.5, 1.6, -1.2);
@@ -713,9 +752,18 @@ export class HallScene implements GameScene {
     this.elsa?.update(dt);
     this.elsaF1?.update(dt);
     const p = this.opts.progress;
+    // bé ngồi im lâu: Elsa nhắc lại + nhún các bệ đang mở
+    if (!this.busy && !this.opening && this.speaking === 0) {
+      this.idleT += dt;
+      if (this.idleT > 12) {
+        this.idleT = 0;
+        this.bumpOpenBadges();
+        void this.line('hall_intro');
+      }
+    }
     for (const s of this.slots) {
       s.actor?.update(dt);
-      const open = isUnlocked(p, s.def.id) && !isSaved(p, s.def.id);
+      const open = this.isOpen(s.def.id) && !isSaved(p, s.def.id);
       const rm = s.ringGlow.material as THREE.MeshBasicMaterial;
       rm.opacity = open ? 0.35 + Math.sin(t * 3 + s.index) * 0.25 : 0;
       s.badge.position.y = PED_H + STATUE_H + 0.45 + Math.sin(t * 1.6 + s.index) * 0.06;

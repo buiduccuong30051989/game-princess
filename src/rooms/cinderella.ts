@@ -1011,9 +1011,9 @@ const room: RoomDef = {
   ambient,
   words: [
     { word: 'giày', emoji: '👠', name: 'chiếc giày', ask: 'Chiếc nào là chiếc giày?' },
-    { word: 'bí', emoji: '🎃', name: 'quả bí', ask: 'Quả nào là quả bí?', fill: { index: 0, distractors: ['m', 'l'] } },
-    { word: 'váy', emoji: '👗', name: 'cái váy', fill: { index: 0, distractors: ['b', 'l'] } },
-    { word: 'nơ', emoji: '🎀', name: 'cái nơ', fill: { index: 0, distractors: ['m', 'h'] } },
+    { word: 'bí', emoji: '🎃', name: 'quả bí', ask: 'Quả nào là quả bí?', fill: { index: 0, distractors: ['p', 'đ'] } },
+    { word: 'váy', emoji: '👗', name: 'cái váy', fill: { index: 0, distractors: ['b', 'p'] } },
+    { word: 'nơ', emoji: '🎀', name: 'cái nơ', fill: { index: 0, distractors: ['p', 'g'] } },
     { word: 'chổi', emoji: '🧹', name: 'cái chổi' },
     { word: 'ngựa', emoji: '🐴', name: 'con ngựa' },
     { word: 'chim', emoji: '🐦', name: 'con chim' },

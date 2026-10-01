@@ -32,7 +32,11 @@ export function loadProgress(): Progress {
   try {
     const p = JSON.parse(localStorage.getItem(KEY) || 'null') as Progress | null;
     if (p && p.v === 1 && Array.isArray(p.saved)) {
-      return { v: 1, saved: p.saved.filter((id) => ROOM_ORDER.includes(id)), balls: Array.isArray(p.balls) ? p.balls : [] };
+      return {
+        v: 1,
+        saved: [...new Set(p.saved.filter((id) => ROOM_ORDER.includes(id)))],
+        balls: Array.isArray(p.balls) ? [...new Set(p.balls.filter((n) => BALL_MILESTONES.includes(n)))] : [],
+      };
     }
   } catch { /* hỏng thì làm lại */ }
   return fresh();

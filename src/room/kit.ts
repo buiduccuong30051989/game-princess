@@ -2,6 +2,7 @@
 // Mọi hàm trả về Object3D (chưa add); gọi `ctx.root.add(...)`. Đơn vị: mét. Nhân vật cao ~1.8 m.
 // Texture vẽ bằng canvas (không cần file ảnh). Màu: số hex; nên dùng màu tươi, bão hoà vừa (xem ROOM-GUIDE).
 import * as THREE from 'three';
+import { markSharedMaterial, markSharedTexture } from '../core/shared.ts';
 
 // ---------------------------------------------------------------- vật liệu
 const matCache = new Map<string, THREE.MeshStandardMaterial>();
@@ -16,7 +17,7 @@ export function mat(color: number, opts: { rough?: number; emissive?: number; ei
       transparent: opts.opacity !== undefined && opts.opacity < 1, opacity: opts.opacity ?? 1,
       side: opts.side ?? THREE.FrontSide, flatShading: opts.flat ?? false,
     });
-    matCache.set(key, m);
+    matCache.set(key, markSharedMaterial(m));
   }
   return m;
 }
@@ -136,13 +137,13 @@ export function skyTex(top: number, bottom: number, stars = 0, w = 512, h = 512)
 let glowTexCache: THREE.CanvasTexture | null = null;
 export function glowTex(): THREE.CanvasTexture {
   if (!glowTexCache) {
-    glowTexCache = canvasTex(128, 128, (g, w) => {
+    glowTexCache = markSharedTexture(canvasTex(128, 128, (g, w) => {
       const gr = g.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
       gr.addColorStop(0, 'rgba(255,255,255,1)');
       gr.addColorStop(0.25, 'rgba(255,255,255,0.55)');
       gr.addColorStop(1, 'rgba(255,255,255,0)');
       g.fillStyle = gr; g.fillRect(0, 0, w, w);
-    });
+    }));
   }
   return glowTexCache;
 }

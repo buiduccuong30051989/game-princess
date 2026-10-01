@@ -1,6 +1,6 @@
 // Công chúa = model tượng + Poser (tạo dáng theo xương) + Ice (đóng băng). Dùng ở cả Đại sảnh lẫn phòng.
 import * as THREE from 'three';
-import { instance, fitHeight } from './core/assets.ts';
+import { instance, fitHeight, disposeSkeletons } from './core/assets.ts';
 import { Poser, normBone, type PoseTuning, type PoseWeights } from './pose.ts';
 import { Ice } from './ice.ts';
 import type { Magic } from './magic.ts';
@@ -197,6 +197,7 @@ export class PrincessActor {
 
   dispose(): void {
     this.ice?.dispose();
+    disposeSkeletons(this.root);
     this.root.removeFromParent();
   }
 }

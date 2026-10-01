@@ -27,11 +27,16 @@ export class Engine {
   /** hàng đợi callback chạy mỗi frame (ngoài scene) */
   readonly hooks = new Set<(dt: number) => void>();
   fps = 60;
+  /** dựng màn lỗi (mạng chập chờn, thiếu file): gọi để về màn an toàn (sảnh). Không có → chờ chạm để tải lại trang. */
+  onSceneError: ((failures: number) => void) | null = null;
+  private failures = 0;
 
   constructor(container: HTMLElement, fadeEl: HTMLElement) {
     this.fadeEl = fadeEl;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: import.meta.env.DEV });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // iPad: màn retina + MSAA + bóng nặng → giới hạn 1.5 trên máy cảm ứng
+    const touch = matchMedia('(pointer: coarse)').matches;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, touch ? 1.5 : 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.NoToneMapping; // màu tươi, không bị nén xám
@@ -63,7 +68,7 @@ export class Engine {
   get aspect(): number { return window.innerWidth / window.innerHeight; }
 
   /** Đổi màn: mờ ra → huỷ màn cũ → dựng màn mới (có thể lâu: hiện vòng xoay) → mờ vào → enter(). */
-  async show(make: () => Promise<GameScene>): Promise<GameScene> {
+  async show(make: () => Promise<GameScene>): Promise<GameScene | null> {
     this.switching = true;
     this.fadeEl.classList.add('on');
     await wait(this.current ? 420 : 0);
@@ -76,6 +81,19 @@ export class Engine {
     let next: GameScene;
     try {
       next = await make();
+      this.failures = 0;
+    } catch (e) {
+      // KHÔNG để bé kẹt màn hồng: thử về sảnh (tối đa 2 lần), sau đó chờ chạm để tải lại trang
+      console.error('[engine] dựng màn lỗi', e);
+      this.failures++;
+      this.switching = false;
+      if (this.onSceneError && this.failures <= 2) {
+        await wait(600);
+        this.onSceneError(this.failures);
+      } else {
+        this.fadeEl.addEventListener('pointerup', () => location.reload(), { once: true });
+      }
+      return null;
     } finally {
       this.fadeEl.classList.remove('loading');
     }

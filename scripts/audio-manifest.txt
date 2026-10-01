@@ -1,9 +1,9 @@
 # Câu dùng chung (sảnh + mọi phòng). key|text – giọng Linh macOS. Thay file cùng tên bằng giọng ba mẹ nếu muốn.
 # Câu riêng từng phòng: scripts/audio/<id>.txt. Từ vựng + token đánh vần: tự sinh (scripts/word-audio.mjs).
 # --- đại sảnh
-hall_intro_first|Chào Hà An! Chị là Elsa. Các công chúa trong lâu đài bị phép thuật đóng băng hết rồi. Hà An giúp chị đánh thức các bạn ấy nhé! Chạm vào một bệ đang sáng nào.
+hall_intro_first|Chào Hà An! Chị là Elsa. Các công chúa trong lâu đài bị phép thuật đóng băng hết rồi. Hà An giúp chị đánh thức các bạn ấy nhé! Chạm vào bệ đang sáng đi nào!
 hall_intro|Hà An ơi, mình đi cứu công chúa nào tiếp theo? Chạm vào bệ đang sáng nhé.
-hall_locked|Cửa này còn khoá. Cứu thêm một công chúa nữa là mở được nhé!
+hall_locked|Cửa này còn khoá. Mình đi cứu công chúa ở bệ đang sáng trước nhé!
 hall_welcome_back|Công chúa đã về đại sảnh rồi! Hà An giỏi quá!
 hall_new_door|Một cánh cửa mới đã mở ra!
 hall_saved_tap|Công chúa này tỉnh rồi! Mình vào chơi với bạn ấy nhé.
@@ -32,7 +32,7 @@ great|Hà An giỏi quá!
 retry|Thử lại nhé!
 hint_last|Chạm vào cái đang nhấp nháy nhé.
 ask_fill|Chữ nào còn thiếu? Chạm vào chữ đúng nhé.
-ask_pick_number|Có tất cả mấy cái? Chạm vào số đúng nhé.
+ask_pick_number|Có tất cả bao nhiêu? Chạm vào số đúng nhé.
 # --- số
 n1|một
 n2|hai

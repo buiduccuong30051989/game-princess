@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import { sharedTextures, sharedMaterials, sharedGeometries, markSharedTexture } from './shared.ts';
 
 export interface Instance { obj: THREE.Object3D; clips: THREE.AnimationClip[] }
 export interface InstanceOpts {
@@ -24,11 +25,44 @@ export function modelUrl(name: string): string {
 export function loadGLB(name: string): Promise<GLTF> {
   let p = cache.get(name);
   if (!p) {
-    p = loader.loadAsync(modelUrl(name));
+    p = loader.loadAsync(modelUrl(name)).then((gltf) => {
+      // texture + geometry của GLB dùng chung giữa mọi bản clone (cache) → disposeTree không được huỷ
+      gltf.scene.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (m.geometry) sharedGeometries.add(m.geometry);
+        for (const mt of m.material ? (Array.isArray(m.material) ? m.material : [m.material]) : []) forEachTexture(mt, (t) => sharedTextures.add(t));
+      });
+      return gltf;
+    });
     p.catch(() => cache.delete(name)); // lỗi mạng: lần sau thử lại
     cache.set(name, p);
   }
   return p;
+}
+
+/** Model tượng bản nhẹ cho Đại sảnh (texture 512 px WebP, sinh bằng gltf-transform resize + webp). */
+export function lodModel(name: string): string { return `lod/${name}`; }
+
+/**
+ * Bỏ 1 GLB khỏi cache + giải phóng texture/geometry GPU của nó (vd tượng full-res khi rời phòng).
+ * Chỉ gọi khi KHÔNG còn bản clone nào đang hiển thị.
+ */
+export function evictGLB(name: string): void {
+  const p = cache.get(name);
+  if (!p) return;
+  cache.delete(name);
+  void p.then((gltf) => {
+    gltf.scene.traverse((o) => {
+      const m = o as THREE.Mesh;
+      m.geometry?.dispose();
+      for (const mt of m.material ? (Array.isArray(m.material) ? m.material : [m.material]) : []) {
+        forEachTexture(mt, (t) => t.dispose());
+        const f = fixed.get(mt);
+        if (f) { fixed.delete(mt); fixed.delete(f); f.dispose(); }
+        mt.dispose();
+      }
+    });
+  }).catch(() => { /* lỗi tải: không có gì để huỷ */ });
 }
 
 /** Tải trước (không chờ). */
@@ -114,7 +148,7 @@ export function emojiTexture(emoji: string): THREE.CanvasTexture {
     ctx.font = '200px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(emoji, 128, 140);
-    tex = new THREE.CanvasTexture(c);
+    tex = markSharedTexture(new THREE.CanvasTexture(c));
     tex.colorSpace = THREE.SRGBColorSpace;
     emojiTex.set(emoji, tex);
   }
@@ -128,12 +162,32 @@ export function emojiSprite(emoji: string, size = 1): THREE.Sprite {
   return sp;
 }
 
-/** Giải phóng GPU cho 1 cây object (geometry + material riêng; texture dùng chung KHÔNG huỷ). */
+/** Gọi fn cho mọi texture gắn trên material (map, emissiveMap, alphaMap…). */
+export function forEachTexture(mat: THREE.Material, fn: (t: THREE.Texture) => void): void {
+  for (const v of Object.values(mat)) if (v && (v as THREE.Texture).isTexture) fn(v as THREE.Texture);
+}
+
+/**
+ * Giải phóng GPU cho 1 cây object: geometry, material, texture RIÊNG của màn (canvas texture vẽ lúc dựng).
+ * Bỏ qua đồ dùng chung (cache): material GLB đã sửa, material kit mat(), texture emoji/glow/GLB, geometry GLB.
+ */
 export function disposeTree(root: THREE.Object3D): void {
+  const texs = new Set<THREE.Texture>();
   root.traverse((o) => {
     const m = o as THREE.Mesh;
-    if (m.geometry && !(m as THREE.SkinnedMesh).isSkinnedMesh) m.geometry.dispose();
+    if (m.geometry && !(m as THREE.SkinnedMesh).isSkinnedMesh && !sharedGeometries.has(m.geometry)) m.geometry.dispose();
     const mats = m.material ? (Array.isArray(m.material) ? m.material : [m.material]) : [];
-    for (const mat of mats) if (!fixed.has(mat)) mat.dispose();
+    for (const mat of mats) {
+      if (fixed.has(mat) || sharedMaterials.has(mat)) continue;
+      forEachTexture(mat, (t) => texs.add(t));
+      mat.dispose();
+    }
+    if ((m as THREE.SkinnedMesh).isSkinnedMesh) (m as THREE.SkinnedMesh).skeleton?.dispose();
   });
+  for (const t of texs) if (!sharedTextures.has(t)) t.dispose();
+}
+
+/** Huỷ bone texture của mọi skinned mesh (mỗi bản clone có Skeleton riêng). */
+export function disposeSkeletons(root: THREE.Object3D): void {
+  root.traverse((o) => { const sm = o as THREE.SkinnedMesh; if (sm.isSkinnedMesh) sm.skeleton?.dispose(); });
 }
