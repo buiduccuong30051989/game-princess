@@ -58,3 +58,18 @@ Nhân vật là IP Disney, model do fan làm/rip game. Chỉ dùng chơi trong n
 | rooms/tiana/streetlight.glb | Street Light | Quaternius | CC0 1.0 | https://poly.pizza/m/nFwrlcLvM5 |
 | rooms/tiana/willow.glb | Willow | Quaternius | CC0 1.0 | https://poly.pizza/m/mBrUbIp9Zd |
 | rooms/tiana/donut.glb | Donut Sprinkles | Kenney | CC0 1.0 | https://poly.pizza/m/RnPNAFyKtY |
+
+## Âm thanh
+
+| Phần | Nguồn | Ghi chú |
+|---|---|---|
+| Giọng đọc tiếng Việt | Microsoft Edge neural TTS `vi-VN-HoaiMyNeural`, `vi-VN-NamMinhNeural` (qua thư viện mã nguồn mở `edge-tts`) | sinh sẵn bằng `scripts/gen-audio.py`, chỉ dùng chơi trong nhà |
+| Tên riêng tiếng Anh | Microsoft Edge neural TTS `en-US-JennyNeural`, `en-US-GuyNeural` | ghép vào câu tiếng Việt |
+| Hiệu ứng (chạm, bụp, chuông, nảy, vút) | tự tổng hợp bằng WebAudio oscillator (`src/audio.ts`) | không dùng file ngoài |
+| Nhạc hộp valse dạ hội, chuông băng tan | tự tổng hợp (`src/audio.ts`, giai điệu tự viết) | không dùng file ngoài |
+
+## Hình khác
+
+- Chân dung khung phụ đề (`src/assets/portraits/`): vẽ từ chính các model ở trên (`scripts/render-portraits.mjs`).
+- Icon "Thêm vào MH chính" (`public/icons/`): emoji Apple 🏰 ❄️ vẽ lại, chỉ dùng trong nhà.
+- Đồ vật trong bài học / toán: emoji Apple hiển thị bởi hệ điều hành.

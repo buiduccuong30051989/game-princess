@@ -1,6 +1,6 @@
 # Hướng dẫn làm 1 phòng công chúa
 
-Tài liệu cho người (hoặc agent) làm 1 trong 11 phòng của "Lâu đài công chúa". Phòng mẫu đã xong: **`src/rooms/rapunzel.ts`** + **`scripts/audio/rapunzel.txt`**. Đọc hết file mẫu trước khi viết.
+Tài liệu cho người (hoặc agent) làm 1 trong 11 phòng của "Lâu đài công chúa". Phòng mẫu đã xong: **`src/rooms/rapunzel.ts`** (câu thoại phòng: `ROOM_TEXT.rapunzel` trong `src/lines.ts`, chủ đề toán: `MATH_THEMES.rapunzel` trong `src/math.ts`). Đọc hết file mẫu trước khi viết.
 
 Người chơi: Hà An (tên ở nhà **Nhím**), 5 tuổi, chưa biết đọc. Chơi trên iPad/Mac, chỉ chạm. Mọi chỉ dẫn đều được đọc thành tiếng. Không có thua.
 
@@ -37,8 +37,7 @@ const room: RoomDef = {
   buildScene,                          // (ctx) => dựng cảnh vào ctx.root (được await)
   ambient,                             // (ctx, dt) => hoạt cảnh mỗi frame (tuỳ chọn)
   words: [...],                        // ≥ 6 từ, ≥ 3 từ có `fill`
-  count: { emoji: '🌹', audio: 'belle_count', range: [3, 7] },
-  challenges: ['spell', 'fill', 'count'],     // 3 bài theo thứ tự, có thể đổi thứ tự
+  challenges: ['spell', 'fill', 'math'],     // 3 bài theo thứ tự, có thể đổi thứ tự
   magicColors: [0xd62839, 0xf4b400],          // 2 màu hạt phép (đậm, bão hoà)
   audio: { name: 'belle_name', intro: 'belle_intro', thanks: 'belle_thanks' },
 };
@@ -219,3 +218,12 @@ Không cần làm gì: `src/pose.ts` tự dò xương (bảng alias cho rig LoRe
 - [ ] Không console error; fps ~60 (`window.__game.engine.fps`)
 - [ ] Chỉ sửa `src/rooms/<id>.ts`, `scripts/audio/<id>.txt` (+ clip `.m4a` mới)
 - [ ] Commit tiếng Anh, không trailer: `feat(room): <id> room`
+
+
+## Cập nhật bản 3 (03/10/2026) — ĐỌC TRƯỚC, đè lên các mục audio ở trên
+
+- Bài đếm đã bỏ: bài thứ 3 là `math` (cộng trừ trong 10). Không còn `count` trong RoomDef. Chủ đề toán: thêm `MATH_THEMES.<id>` vào `src/math.ts`.
+- Không còn `scripts/audio-manifest.txt`, `scripts/audio/<id>.txt`, `gen-audio.sh`, giọng Linh. Câu phòng: `ROOM_TEXT.<id>` trong `src/lines.ts`
+  (tên tiếng Anh viết `{Tên}`). Sinh giọng: `pnpm audio` (Hoài My, edge-tts). Soát: `pnpm check:audio`, `pnpm check:spelling`
+  (từ mới phải thêm đáp án đánh vần viết tay vào `scripts/check-spelling.mjs`).
+- ambient() chỉ được đụng đồ qua `ctx.state` (đồ tĩnh còn lại bị gộp để giảm draw call; vật chuyển động được phát hiện tự động).
