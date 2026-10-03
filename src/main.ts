@@ -10,15 +10,22 @@ import { RoomScene } from './room/RoomScene.ts';
 import { COMMON_KEYS, roomAudioKeys } from './room/audioKeys.ts';
 import { ELSA_MODEL } from './elsa.ts';
 import { unlockAudio, preload, stopSpeech, stopMusic } from './audio.ts';
-import { els, setStars, startSparkles } from './ui.ts';
+import { els, setStars, startSparkles, onTap } from './ui.ts';
+import { initTalk } from './talk.ts';
+import { seedMathCounter } from './challenge.ts';
+import { installTabletGuards } from './tablet.ts';
 import { FAMILY_KEYS } from './family.ts';
 import type { RoomId } from './room/types.ts';
 
+installTabletGuards();
+initTalk();
 const engine = new Engine(document.getElementById('app')!, els.fade);
 engine.start();
 // màn lỗi (tải model hỏng…): quay về sảnh thay vì kẹt
 engine.onSceneError = () => void goHall();
 const progress = loadProgress();
+// cộng / trừ xen kẽ tiếp nối giữa các lần chơi (mỗi phòng đã cứu ≈ 1 bài toán)
+seedMathCounter(progress.saved.length);
 let justSaved: RoomId | null = null;
 setStars(progress.saved.length, ROOM_ORDER.length);
 
@@ -69,12 +76,19 @@ function boot(): void {
   }
   startSparkles();
   els.startBtn.classList.add('ready');
-  els.startBtn.addEventListener('click', () => {
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true;
     unlockAudio();
     els.start.classList.add('hide');
     setTimeout(() => (els.start.hidden = true), 520);
-    void preload([...COMMON_KEYS, ...FAMILY_KEYS]).then(() => goHall());
-  }, { once: true });
+    // tải trước tối đa 8 s (mạng chậm vẫn vào được sảnh; clip thiếu thì tải lúc cần)
+    void Promise.race([preload([...COMMON_KEYS, ...FAMILY_KEYS]), new Promise((r) => setTimeout(r, 8000))]).then(() => goHall());
+  };
+  onTap(els.startBtn, start);
+  // iPad Safari: mở tiếng chắc ăn nhất trong touchend / click của chính nút này
+  els.startBtn.addEventListener('click', start);
 }
 
 boot();

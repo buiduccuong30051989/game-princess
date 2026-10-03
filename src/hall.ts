@@ -12,8 +12,10 @@ import { ROOMS } from './rooms/index.ts';
 import { princessInfo } from './rooms/princesses.ts';
 import { PrincessActor } from './princess.ts';
 import { ElsaGuide, ELSA_MODEL } from './elsa.ts';
-import { play, sfx, musicBox, stopMusic, chime, WALTZ, CHIME_BIG, stopSpeech } from './audio.ts';
-import { els, showHud, setStars, confetti, showActions, banner } from './ui.ts';
+import { play, sfx, musicBox, stopMusic, chime, WALTZ, CHIME_BIG, stopSpeech, withTimeout, audioActivity } from './audio.ts';
+import { els, showHud, setStars, confetti, showActions, banner, onTap } from './ui.ts';
+import { bankKeyPick } from './voice.ts';
+import { clearTalk } from './talk.ts';
 import { FAMILY, photoUrl, familyCheer, familyCheerAll, familyBusy, clearFamily } from './family.ts';
 import { tween, wait, easeOutBack, easeInOutSine } from './tween.ts';
 import { mergeStatic } from './core/merge.ts';
@@ -64,6 +66,7 @@ export interface HallOpts {
 }
 
 export class HallScene implements GameScene {
+  readonly kind = 'hall';
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(40, 1, 0.1, 300);
   private readonly engine: Engine;
@@ -82,6 +85,11 @@ export class HallScene implements GameScene {
   private pendingDoor: RoomId | null = null;
   /** giây bé chưa chạm gì (nhắc lại khi quá lâu) */
   private idleT = 0;
+  /** nhắc khi ngồi im: 20 s, rồi 40 s, 80 s (đỡ nhắc liên tục) */
+  private idleStep = 0;
+  /** giây cờ busy / opening bị giữ (watchdog sảnh) */
+  private lockT = 0;
+  private unbindSay: (() => void) | null = null;
   private alive = true;
   private time = 0;
   private lastLine: string | null = null;
@@ -96,7 +104,6 @@ export class HallScene implements GameScene {
   private readonly snow: { sp: THREE.Sprite; speed: number; phase: number }[] = [];
   private readonly snowMats: THREE.SpriteMaterial[] = [];
   private readonly _v = new THREE.Vector3();
-  private readonly onSay = () => { if (this.lastLine) void play(this.lastLine); };
 
   private constructor(engine: Engine, opts: HallOpts) {
     this.engine = engine;
@@ -623,11 +630,20 @@ export class HallScene implements GameScene {
     this.camera.updateProjectionMatrix();
   }
 
+  /** Test (scripts/test/play-human.mjs): toạ độ màn hình của bệ đang mở chưa cứu + đã khoá, để chạm như người thật. */
+  testTargets(): { id: RoomId; x: number; y: number; open: boolean; saved: boolean }[] {
+    return this.slots.map((s) => {
+      const v = s.badge.getWorldPosition(new THREE.Vector3()).project(this.camera);
+      return { id: s.def.id, x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight, open: this.isOpen(s.def.id), saved: isSaved(this.opts.progress, s.def.id) };
+    });
+  }
+  get testBusy(): boolean { return this.busy || this.opening; }
+
   // ------------------------------------------------------------------ luồng
   enter(): void {
     showHud(false);
     showActions(false, false);
-    els.say.addEventListener('click', this.onSay);
+    this.unbindSay = onTap(els.say, () => { this.kickIdle(); if (this.lastLine) void play(this.lastLine); });
     const p = this.opts.progress;
     setStars(p.saved.length, ROOM_ORDER.length);
     // tải nốt tượng còn lại (lần lượt, không giật)
@@ -643,6 +659,10 @@ export class HallScene implements GameScene {
     this.lastLine = key;
     this.speaking++;
     try { await play(key); } finally { this.speaking--; this.idleT = 0; }
+  }
+  private bank(name: string): Promise<void> { return this.line(bankKeyPick(name)); }
+  /** bé vừa chạm: nhắc lại từ mốc 20 s */
+  private kickIdle(): void { this.idleT = 0; this.idleStep = 0;
   }
 
   private async flow(): Promise<void> {
@@ -661,8 +681,8 @@ export class HallScene implements GameScene {
       this.busy = false;
       banner('Chào Nhím! 👋', 2400);
       void this.guideHello();
-      if (!this.opts.arrival && !ball) await this.line(p.saved.length === 0 ? 'hall_intro_first' : 'hall_hello');
-      else await this.line('hall_intro');
+      if (!this.opts.arrival && !ball && p.saved.length === 0) await this.line('hall_intro_first');
+      else await this.bank('hall_hello');
     } finally {
       this.busy = false;
     }
@@ -697,7 +717,7 @@ export class HallScene implements GameScene {
     void this.elsa.play('celebrate');
     setStars(this.opts.progress.saved.length, ROOM_ORDER.length, true);
     s.actor?.wave(1.6);
-    await this.line('hall_welcome_back');
+    await this.bank('hall_welcome');
     if (!this.alive) return;
     await this.cheer();
     if (!this.alive) return;
@@ -712,12 +732,12 @@ export class HallScene implements GameScene {
       this.engine.magic.burst(dp, 60, 0xffffff, 1.6, 0.45, 1.3, -1.2);
       void tween(700, (k) => ns.badge.scale.setScalar(BADGE * (1 + Math.sin(k * Math.PI) * 0.5)), easeOutBack);
       chime('G6:0.5 C7:1');
-      await this.line('hall_new_door');
+      await this.bank('hall_new_door');
     }
   }
 
   onTap(ndc: THREE.Vector2): void {
-    this.idleT = 0;
+    this.kickIdle();
     if (this.busy || this.opening || !this.alive) return;
     this.raycaster.setFromCamera(ndc, this.camera);
     const targets: THREE.Object3D[] = [this.elsaHit];
@@ -737,7 +757,7 @@ export class HallScene implements GameScene {
   private async cheer(): Promise<void> {
     if (!this.alive) return;
     this.speaking++;
-    try { await familyCheer(); } finally { this.speaking--; this.idleT = 0; }
+    try { await withTimeout(familyCheer(), 8000); } finally { this.speaking--; this.idleT = 0; }
   }
 
   private async familyWallTap(): Promise<void> {
@@ -755,14 +775,14 @@ export class HallScene implements GameScene {
   /** Bé chạm vào Elsa: quay ra, xoay tung tuyết, cười, vẫy. */
   private async elsaTapped(ok: () => boolean): Promise<void> {
     sfx('sfx_pop', 0.5);
-    const key = `elsa_tap_${1 + Math.floor(Math.random() * 3)}`;
-    if (this.elsaF1) { void this.line(key); await this.elsaF1.twirl(1, 1400); return; }
-    await this.elsa.face(this.camera.position, 250);
+    const key = bankKeyPick('elsa_tap');
+    if (this.elsaF1) { void this.line(key); await withTimeout(this.elsaF1.twirl(1, 1400), 4000); return; }
+    await withTimeout(this.elsa.face(this.camera.position, 250), 2000);
     if (!ok()) return;
     void this.line(key);
-    await this.elsa.spinOnce(1100);
+    await withTimeout(this.elsa.spinOnce(1100), 4000);
     if (!ok()) return;
-    await this.elsa.wave(1.4);
+    await withTimeout(this.elsa.wave(1.4), 5000);
   }
 
   // ------------------------------------------------------------------ Elsa tự hoạt động
@@ -852,7 +872,7 @@ export class HallScene implements GameScene {
       void tween(450, (k) => { s.badge.position.x = Math.sin(k * Math.PI * 6) * 0.12 * (1 - k); });
       if (this.elsaF1) void this.elsaF1.cheer(0.4); else void this.elsa.play('think');
       this.bumpOpenBadges();
-      await this.line('hall_locked');
+      await this.bank('hall_locked');
       return;
     }
     this.opening = true;
@@ -868,7 +888,7 @@ export class HallScene implements GameScene {
       await wait(550);
       void this.engine.magic.beam(this.elsa.handWorld(), doorP, s.def.magicColors[0], s.def.magicColors[1], 0.9, 2.2, 1.2);
     } else void this.elsaF1.cheer(0.6);
-    const nameLine = this.line(saved ? 'hall_saved_tap' : s.def.audio.name);
+    const nameLine = saved ? this.bank('hall_saved_tap') : this.line(s.def.audio.name);
     await wait(900);
     if (!this.alive) return;
     this.engine.magic.burst(doorP, 120, s.def.palette.primary, 2.2, 0.55, 1.5, -1.2);
@@ -949,7 +969,7 @@ export class HallScene implements GameScene {
       this.hemi.color.copy(new THREE.Color(0xc7b0ff)).lerp(hc0, k);
       disco.forEach((l) => (l.intensity = 14 * (1 - k)));
     });
-    await this.line('ball_end');
+    await this.bank('ball_end');
     disco.forEach((l) => l.removeFromParent());
     this.discoLights = [];
   }
@@ -1021,12 +1041,24 @@ export class HallScene implements GameScene {
     // bé ngồi im lâu: Elsa nhắc lại + nhún các bệ đang mở
     if (!this.busy && !this.opening && this.speaking === 0) {
       this.idleT += dt;
-      if (this.idleT > 12) {
+      // ngồi im: nhắc lần đầu sau 20 s, rồi giãn ra 40 s, 80 s (không nhắc liên tục)
+      if (this.idleT > [20, 40, 80][Math.min(this.idleStep, 2)]) {
         this.idleT = 0;
+        this.idleStep++;
         this.bumpOpenBadges();
-        void this.line('hall_intro');
+        void this.bank('hall_idle');
       }
     }
+    // watchdog sảnh: cờ busy / opening giữ mà 15 s không có tiếng nào → nhả (bé chạm lại được)
+    if ((this.busy || this.opening) && performance.now() - audioActivity() > 15000) {
+      this.lockT += dt;
+      if (this.lockT > 15) {
+        console.warn('[hall] watchdog: nhả khoá chạm');
+        this.lockT = 0;
+        this.busy = false;
+        this.opening = false;
+      }
+    } else this.lockT = 0;
     for (const s of this.slots) {
       s.actor?.update(dt);
       const open = this.isOpen(s.def.id) && !isSaved(p, s.def.id);
@@ -1053,7 +1085,8 @@ export class HallScene implements GameScene {
     this.lifeToken++;
     stopMusic();
     clearFamily();
-    els.say.removeEventListener('click', this.onSay);
+    this.unbindSay?.();
+    clearTalk();
     for (const s of this.slots) s.actor?.dispose();
     this.elsa?.dispose();
     this.elsaF1?.dispose();

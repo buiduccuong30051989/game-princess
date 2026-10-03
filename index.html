@@ -2,11 +2,17 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, viewport-fit=cover, user-scalable=no" />
+  <!-- "Thêm vào MH chính" trên iPad: chạy toàn màn hình như app -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Lâu đài" />
+  <meta name="format-detection" content="telephone=no" />
   <meta name="theme-color" content="#fde7f3" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🏰%3C/text%3E%3C/svg%3E" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
   <title>Lâu đài công chúa của Hà An</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,11 +22,14 @@
       --bg: #fde7f3; --ink: #4a2c4a; --accent: #ff9600; --success: #58cc02; --magic: #8b5cf6; --pink: #ff5fb4;
       --ice: #a7e8ff; --card: #fffaf0; --shadow: 0 6px 0 rgba(74, 44, 74, .22); --gold: #ffc233;
     }
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    /* máy tính bảng: không phóng to, không chọn chữ, không menu giữ lâu, không kéo trang / kéo để tải lại (src/tablet.ts chặn thêm) */
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
     [hidden] { display: none !important; }
-    html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
-    body { font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; color: var(--ink); user-select: none; -webkit-user-select: none; touch-action: manipulation; overscroll-behavior: none; }
-    #app, #app canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); overscroll-behavior: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    body { position: fixed; inset: 0; font-family: 'Baloo 2', 'Nunito', system-ui, sans-serif; color: var(--ink); touch-action: none; }
+    button { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+    img { -webkit-user-drag: none; }
+    #app, #app canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 
     .big {
       appearance: none; border: 5px solid var(--ink); border-radius: 999px; background: #fff;
@@ -40,7 +49,7 @@
     #hud-right { display: flex; gap: 12px; align-items: center; }
 
     /* tên phòng */
-    #banner { position: fixed; top: 16%; left: 50%; transform: translate(-50%, -30px) scale(.9); z-index: 7; pointer-events: none;
+    #banner { position: fixed; top: calc(max(14px, env(safe-area-inset-top)) + 124px); left: 50%; transform: translate(-50%, -30px) scale(.9); z-index: 7; pointer-events: none;
       font-size: clamp(40px, 6.5vw, 76px); font-weight: 800; color: #fff; -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill;
       text-shadow: 0 6px 0 rgba(74,44,74,.25); opacity: 0; transition: opacity .5s, transform .5s; white-space: nowrap; }
     #banner.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
@@ -58,6 +67,7 @@
     }
     @keyframes rise { from { transform: translate(-50%, 40px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
     #panel-top { display: flex; align-items: center; justify-content: center; gap: 16px; min-height: 64px; flex-wrap: wrap; }
+    #panel-bottom { display: flex; align-items: center; justify-content: center; gap: 22px; flex-wrap: wrap; }
     #repeat { width: 104px; height: 104px; font-size: 48px; }
     #word-emoji { font-size: 76px; line-height: 1; }
     #word { font-size: clamp(52px, 8vw, 92px); font-weight: 800; letter-spacing: .06em; display: flex; gap: .02em; line-height: 1.05; }
@@ -66,12 +76,43 @@
     #word span.blank { color: var(--pink); border-bottom: 6px dashed var(--pink); line-height: .9; min-width: .55em; text-align: center; }
     #word.whole span { color: var(--success); animation: bounce .5s ease; }
     @keyframes bounce { 0% { transform: scale(1); } 40% { transform: scale(1.18) rotate(-3deg); } 100% { transform: scale(1); } }
-    #counter { width: 80px; height: 80px; border-radius: 50%; background: var(--accent); border: 5px solid var(--ink); color: #fff; font-size: 46px; font-weight: 800; display: grid; place-items: center; }
     .bump { animation: bump .45s ease; }
     @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.25); } 100% { transform: scale(1); } }
-    #gemrow { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; max-width: 920px; }
-    .gem { appearance: none; border: 0; background: none; font-size: 64px; line-height: 1; cursor: pointer; padding: 6px; min-width: 112px; min-height: 112px; transition: transform .2s, opacity .2s; filter: drop-shadow(0 4px 0 rgba(74,44,74,.2)); }
-    .gem.done { transform: scale(.75); opacity: .35; }
+
+    /* toán: hàng đồ vật (trên) + phép tính bằng chữ số (dưới, cạnh 3 nút số) — src/ui.ts showMath */
+    #math { display: flex; align-items: center; justify-content: center; }
+    .mobjs { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; max-width: 820px; }
+    .mgroup { display: flex; gap: 2px; padding: 4px 10px; border-radius: 22px; background: rgba(167, 232, 255, .35); border: 3px dashed rgba(74,44,74,.18); }
+    .mgroup.gb { background: rgba(255, 194, 51, .28); }
+    .mgroup.gc { background: rgba(88, 204, 2, .14); }
+    .mitem { font-size: 50px; line-height: 1.05; display: inline-block; position: relative; transition: transform .5s cubic-bezier(.3,1.6,.5,1), opacity .5s; filter: drop-shadow(0 3px 0 rgba(74,44,74,.18)); }
+    .mitem.small { font-size: 38px; }
+    .mitem.new { animation: popIn .5s cubic-bezier(.3,1.6,.5,1) both; }
+    @keyframes popIn { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .mitem.bag { font-size: 44px; transition: opacity .3s, width .3s; }
+    .mitem.bag.open { opacity: 0; width: 0; overflow: hidden; }
+    .mitem.ghost { opacity: 0; width: 0; overflow: hidden; }
+    .mitem.ghost.shown { opacity: .55; width: auto; overflow: visible; outline: 3px dashed var(--magic); outline-offset: -2px; border-radius: 14px; }
+    /* trừ: vật bị bớt bay / rơi / tan / chạy đi, để lại dấu gạch */
+    .mitem.gone::after { content: '✖'; position: absolute; inset: 0; display: grid; place-items: center; color: #e5484d; font-size: 40px; opacity: 0; transition: opacity .3s .4s; }
+    .mitem.gone.went { opacity: .3; }
+    .mitem.gone.went::after { opacity: 1; }
+    .mitem.gone.went.away-fly { transform: translate(18px, -26px) rotate(18deg) scale(.75); }
+    .mitem.gone.went.away-fall { transform: translateY(22px) rotate(-25deg) scale(.8); }
+    .mitem.gone.went.away-melt { transform: scaleY(.35) translateY(40px); }
+    .mitem.gone.went.away-run { transform: translateX(34px) scale(.8); }
+    /* đếm cùng: nảy lên + số trên đầu */
+    .mitem.hop { animation: hop .45s ease; }
+    @keyframes hop { 0%,100% { transform: translateY(0); } 45% { transform: translateY(-26px) scale(1.15); } }
+    .mitem.counted::before { content: attr(data-n); position: absolute; left: 50%; top: -30px; transform: translateX(-50%); font-size: 26px; font-weight: 800; color: #fff;
+      background: var(--accent); border: 3px solid var(--ink); border-radius: 999px; min-width: 38px; line-height: 30px; text-align: center; }
+    #math-eq { display: flex; align-items: center; gap: 10px; font-size: 64px; font-weight: 800; line-height: 1; }
+    .mnum { min-width: .7em; text-align: center; }
+    .mop { font-size: 52px; font-weight: 800; color: var(--magic); padding: 0 2px; }
+    .mq { display: inline-grid; place-items: center; min-width: 84px; height: 84px; border: 5px dashed var(--pink); border-radius: 22px; color: var(--pink); background: #fff; }
+    .mq.solved { border-style: solid; border-color: #3f9500; color: #fff; background: var(--success); animation: bump .45s ease; }
+    .opt.num { font-size: 84px; color: #5b3aa8; }
+    .opt.letter { font-size: 84px; }
     #options { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
     .opt {
       appearance: none; border: 6px solid var(--ink); border-radius: 28px; background: #fff; color: var(--ink);
@@ -153,6 +194,29 @@
     #debug pre.ok { border-color: #3f9500; }
     #debug pre.bad { border-color: #d7263d; }
 
+    /* phụ đề có nhãn người nói (src/talk.ts): giữa nút 🏰 và cụm ⭐ 🔊 trên cùng, không che mặt nhân vật */
+    #subtitle { position: fixed; z-index: 11; top: max(14px, env(safe-area-inset-top));
+      left: calc(max(16px, env(safe-area-inset-left)) + 120px); right: calc(max(16px, env(safe-area-inset-right)) + 290px);
+      display: flex; justify-content: center; pointer-events: none; }
+    #subtitle > * { flex: none; }
+    #subtitle.in { animation: subIn .3s ease both; }
+    @keyframes subIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+    #subtitle { --sc: #2f9df5; }
+    #subtitle .sub-ava { width: 76px; height: 76px; border-radius: 50%; border: 5px solid var(--sc); background: radial-gradient(circle at 50% 35%, #fff, #e8f4ff);
+      display: grid; place-items: center; font-size: 46px; overflow: hidden; box-shadow: var(--shadow); position: relative; z-index: 1; margin-right: -18px; align-self: center; }
+    #subtitle .sub-ava img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #subtitle .sub-body { flex: 0 1 auto; min-width: 0; max-width: 100%; background: rgba(255, 250, 240, .96); border: 4px solid var(--sc); border-radius: 26px; padding: 8px 18px 8px 30px;
+      box-shadow: var(--shadow); font-size: 21px; line-height: 1.22; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    #subtitle .sub-body b { color: var(--sc); font-weight: 800; margin-right: 6px; }
+
+    /* màn dọc: nhắc xoay ngang (game dựng cho iPad nằm ngang) */
+    #rotate { position: fixed; inset: 0; z-index: 100; display: none; place-items: center; text-align: center; padding: 24px;
+      background: radial-gradient(circle at 50% 35%, #fff 0%, #ffe3f3 45%, #e9d8ff 100%); }
+    #rotate .phone { font-size: 120px; display: inline-block; animation: turn 2.2s ease-in-out infinite; }
+    #rotate p { margin: 18px 0 0; font-size: 40px; font-weight: 800; color: #fff; -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+    @keyframes turn { 0%, 25% { transform: rotate(0); } 55%, 100% { transform: rotate(-90deg); } }
+    @media (orientation: portrait) { #rotate { display: grid; } }
+
     @media (max-width: 720px), (max-height: 620px) {
       .opt { width: 108px; height: 108px; font-size: 62px; border-radius: 22px; }
       #home, #say, #repeat { width: 96px; height: 96px; font-size: 44px; }
@@ -161,9 +225,12 @@
       .fam-ava { width: 84px; height: 84px; font-size: 54px; }
       .fam-name { font-size: 26px; } .fam-say { font-size: 22px; }
       .fam-card.mini .fam-ava { width: 56px; height: 56px; font-size: 36px; }
-      #gemrow { gap: 10px; }
-      .gem { font-size: 54px; min-width: 96px; min-height: 96px; }
       #word-emoji { font-size: 60px; }
+      .mitem { font-size: 40px; }
+      #math-eq { font-size: 52px; }
+      .mq { min-width: 70px; height: 70px; }
+      #subtitle { left: calc(max(16px, env(safe-area-inset-left)) + 110px); right: calc(max(16px, env(safe-area-inset-right)) + 250px); }
+      #subtitle .sub-body { font-size: 18px; }
     }
   </style>
 </head>
@@ -185,10 +252,12 @@
       <button id="repeat" class="big" aria-label="Nghe lại">🔊</button>
       <div id="word-emoji" hidden></div>
       <div id="word" hidden></div>
-      <div id="counter" hidden></div>
+      <div id="math" hidden></div>
     </div>
-    <div id="gemrow" hidden></div>
-    <div id="options"></div>
+    <div id="panel-bottom">
+      <div id="math-eq" hidden></div>
+      <div id="options"></div>
+    </div>
   </div>
 
   <div id="actions" hidden>
@@ -211,6 +280,13 @@
   </div>
 
   <div id="debug" hidden></div>
+
+  <div id="rotate" aria-hidden="true">
+    <div>
+      <div class="phone">📱</div>
+      <p>Nhím ơi, xoay ngang máy nhé!</p>
+    </div>
+  </div>
 
   <script type="module" src="/src/main.ts"></script>
 </body>
