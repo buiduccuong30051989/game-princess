@@ -1,5 +1,0 @@
-# Phòng Mộc Lan (vườn hoa đào). key|text – giọng Linh macOS. Từ vựng (ask_/name_/token) KHÔNG viết ở đây: tự sinh từ src/rooms/mulan.ts.
-mulan_name|Vườn hoa đào của Mộc Lan!
-mulan_intro|Đây là vườn hoa đào của công chúa Mộc Lan. Ôi, Mộc Lan bị đóng băng mất rồi! Nhím trả lời đúng ba câu để làm tan băng nhé!
-mulan_thanks|Cảm ơn Nhím đã cứu tớ! Tớ là Mộc Lan. Nhím dũng cảm lắm!
-mulan_count|Có mấy bông hoa đào? Chạm từng bông để đếm nhé.

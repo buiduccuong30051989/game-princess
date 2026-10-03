@@ -4,10 +4,14 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
-    "build": "vite build",
-    "preview": "vite preview --host",
-    "audio": "bash scripts/gen-audio.sh"
+    "dev": "vite --host --port 5182 --strictPort",
+    "build": "node scripts/check-spelling.mjs && node scripts/audio-lines.mjs --check && tsc --noEmit && vite build",
+    "preview": "vite preview --host --port 5182",
+    "check:spelling": "node scripts/check-spelling.mjs",
+    "check:audio": "node scripts/audio-lines.mjs --check",
+    "audio": "node scripts/audio-lines.mjs && scripts/.venv/bin/python scripts/gen-audio.py",
+    "test:human": "node scripts/test/play-human.mjs",
+    "test:perf": "node scripts/test/perf.mjs"
   },
   "dependencies": {
     "three": "0.186.1"

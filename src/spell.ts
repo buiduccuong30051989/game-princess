@@ -1,15 +1,17 @@
-// Đánh vần tự động theo GDPT 2018 (Tiếng Việt 1). File THUẦN, không import gì:
-// vừa chạy trong trình duyệt, vừa chạy bằng `node scripts/word-audio.ts` để sinh audio.
+// Đánh vần tự động theo GDPT 2018 (Tiếng Việt 1). File THUẦN, không import gì: vừa chạy trong trình duyệt,
+// vừa chạy bằng Node (scripts/check-spelling.mjs, scripts/audio-lines.mjs). Bản chung với 05-pony-story/src/spell.ts (sửa vần tắc).
 //
 // Quy tắc:
 //  - Gọi phụ âm theo ÂM: bờ, cờ, chờ, gờ, giờ, ngờ, quờ... (k = "ca").
 //  - Vần 1 chữ:   âm đầu – vần – tiếng không dấu – tên dấu – tiếng      (bờ – o – bo – huyền – bò)
 //  - Vần 2+ chữ:  đánh vần vần trước (e – o – eo), rồi tiếng (mờ – eo – meo), rồi thanh (huyền – mèo)
 //  - Không dấu thì không có bước thanh. Âm cuối ng/nh/ch đọc là 1 đơn vị (ă – ngờ – ăng).
-//  - Vần kết thúc p/t/c/ch (chỉ đi với sắc/nặng): BỎ bước "tiếng không dấu" (máy đọc "vet" thành "vét"
-//    → bé nghe thanh sắc ngay trước chữ "nặng"): vờ – et – nặng – vẹt. Vần đó đọc bằng chữ có sắc (óc, át).
-//  - Nguyên âm đôi iê/yê, uô, ươ trước âm cuối đọc là 1 đơn vị: ia, ua, ưa (u – ia – tờ – uyêt; ưa – ngờ – ương).
-//  - ă đọc "á", â đọc "ớ" (á – nờ – ăn, ớ – mờ – âm).
+//  - Vần kết thúc c/ch/p/t (vần tắc): vần đọc với thanh SẮC (ít, óc, ác, ếch, ấp), tiếng không dấu cũng đọc sắc (vít),
+//    rồi mới thêm dấu: vịt = i – tờ – ít, vờ – ít – vít – nặng – vịt. Tiếng mang dấu sắc dừng ở tiếng sắc:
+//    hát = a – tờ – át, hờ – át – hát (không có bước "sắc – hát" lặp lại).
+//  - Nguyên âm đôi iê/yê, uô, ươ trước âm cuối đọc là 1 đơn vị: ia, ua, ưa (u – ia – tờ – uyết; ưa – ngờ – ương).
+//  - ă đọc "á", â đọc "ớ" (á – nờ – ăn, ớ – mờ – âm). i và y trong chuỗi đánh vần đều đọc "i"
+//    ("i ngắn / i dài" chỉ dùng khi gọi TÊN chữ cái, xem src/letters.ts).
 //  - lit = chỉ số chữ sáng lên khi đọc token, đếm theo Array.from(word) (code point, dạng NFC).
 
 export interface SpellToken { audio: string; lit: number[] }
@@ -125,24 +127,29 @@ export function spell(wordIn: string): Spelled {
   const say = (key: string, text: string, lit: number[]) => { lines.set(key, text); tokens.push({ audio: key, lit }); };
   const unitKey = (u: typeof units[number]) => (u.consonant ? `c_${slug(u.text)}` : `v_${slug(u.text)}`);
   const unitText = (u: typeof units[number]) => (u.consonant ? CONSONANT_SOUND[u.text] : DIPHTHONG_TEXT[u.text] ?? VOWEL_TEXT[u.text] ?? u.text);
-  const rhymeKey = `v_${slug(rhyme)}`;
   const last = units[units.length - 1];
   const stop = last.consonant && STOP_FINALS.includes(last.text);
   const rhymeText = rhyme.length === 1 ? (VOWEL_TEXT[rhyme] ?? rhyme) : stop ? withSac(rhyme) : rhyme;
+  const rhymeKey = stop ? `v_${wordId(rhymeText)}` : `v_${slug(rhyme)}`;
 
   if (units.length > 1) {
     for (const u of units) say(unitKey(u), unitText(u), u.idx);
     say(rhymeKey, rhymeText, rhymeIdx);
   }
+  // vần tắc: tiếng "không dấu" thực ra đọc sắc (vít); nếu chính từ mang dấu sắc thì tiếng đó là đích, không thêm bước thanh
+  const baseText = stop ? withSac(base) : base;
+  const baseKey = stop ? `s_${wordId(baseText)}` : `s_${slug(base)}`;
+  const toneStep = !!tone && !(stop && tone === 'sac');
   if (onset) {
     say(`c_${slug(onset)}`, CONSONANT_SOUND[onset], Array.from({ length: onLen }, (_, i) => i));
     say(rhymeKey, rhymeText, rhymeIdx);
-    if (!stop || !tone) say(`s_${slug(base)}`, base, all);
+    if (toneStep || !tone) say(baseKey, baseText, all);
+    else say(`w_${wordId(word)}`, word, all);
   } else if (units.length === 1) {
     say(rhymeKey, rhymeText, rhymeIdx);
   }
-  if (tone) {
-    say(`t_${tone}`, TONE_TEXT[tone], [toneIndex]);
+  if (toneStep) {
+    say(`t_${tone}`, TONE_TEXT[tone!], [toneIndex]);
     say(`w_${wordId(word)}`, word, all);
   }
   return { id: wordId(word), word, onset, rhyme, tone, tokens, lines: [...lines] };
@@ -174,6 +181,17 @@ export function letterAudio(ch: string): AudioLine | null {
 export function wordId(word: string): string {
   const { base, tone } = splitTone(word.normalize('NFC').toLowerCase());
   return slug(base) + (tone ? TONE_TELEX[tone] : '');
+}
+
+/**
+ * Âm khi chạm 1 NÚT CHỮ (bài điền chữ thiếu): gọi TÊN chữ theo SGK lớp 1 — phụ âm theo âm (bờ, cờ…), k = "ca",
+ * ă = "á", â = "ớ", i = "i ngắn", y = "i dài"; nguyên âm có dấu đọc đúng chữ đó.
+ */
+export function letterNameAudio(ch: string): AudioLine | null {
+  const c = ch.normalize('NFC').toLowerCase();
+  if (c === 'i') return ['ln_i', 'i ngắn'];
+  if (c === 'y') return ['ln_y', 'i dài'];
+  return letterAudio(c);
 }
 
 /** Câu hỏi mặc định cho bài nghe – chọn hình: dùng lại loại từ con / quả / bông, còn lại "Cái nào". */

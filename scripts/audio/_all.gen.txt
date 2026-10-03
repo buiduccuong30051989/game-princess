@@ -1,0 +1,689 @@
+# TỰ SINH bởi scripts/audio-lines.mjs – ĐỪNG SỬA TAY. Sửa câu trong src/lines.ts / src/math.ts / src/rooms/<id>.ts rồi `pnpm audio`.
+#voice elsa|vi-VN-HoaiMyNeural|-10%|+0Hz|en-US-JennyNeural|+0Hz
+#voice princess|vi-VN-HoaiMyNeural|-6%|+8Hz|en-US-JennyNeural|+8Hz
+#voice ba|vi-VN-NamMinhNeural|-6%|+0Hz|en-US-GuyNeural|+0Hz
+#voice me|vi-VN-HoaiMyNeural|-10%|+3Hz|en-US-JennyNeural|+3Hz
+#voice ong|vi-VN-NamMinhNeural|-16%|-10Hz|en-US-GuyNeural|-10Hz
+#voice batuyet|vi-VN-HoaiMyNeural|-16%|-7Hz|en-US-JennyNeural|-7Hz
+#voice bachanh|vi-VN-HoaiMyNeural|-12%|-4Hz|en-US-JennyNeural|-4Hz
+anna_intro|elsa|Đây là sân lâu đài của công chúa {Anna}, bên bờ biển xanh. Ôi, {Anna} bị đóng băng mất rồi! Nhím trả lời đúng ba câu để làm tan băng nhé!
+anna_name|elsa|Sân hè của {Anna}!
+anna_thanks|princess|Cảm ơn Nhím đã cứu tớ! Tớ là {Anna}, em gái của chị {Elsa}. Mình cùng {Olaf} đi ăn sô cô la nhé!
+ariel_intro|elsa|Đây là hang kho báu dưới biển của nàng tiên cá {Ariel}. Ôi, {Ariel} bị đóng băng mất rồi! Nhím trả lời đúng ba câu để làm tan băng nhé!
+ariel_name|elsa|Hang kho báu của {Ariel}!
+ariel_thanks|princess|Cảm ơn Nhím đã cứu tớ! Tớ là {Ariel}. Mình cùng bơi với các bạn cá nhé!
+ask_aams|elsa|Cái nào là cái ấm?
+ask_banhs|elsa|Cái nào là cái bánh?
+ask_bis|elsa|Quả nào là quả bí?
+ask_cas|elsa|Con nào là con cá?
+ask_chaor|elsa|Cái nào là cái chảo rán trứng?
+ask_chim|elsa|Con nào là con chim?
+ask_chooir|elsa|Cái nào là cái chổi?
+ask_cua|elsa|Con nào là con cua?
+ask_cung|elsa|Cái nào là cái cung?
+ask_cus|elsa|Con nào là con cú?
+ask_daau|elsa|Quả nào là quả dâu?
+ask_ddas|elsa|Cái nào là hòn đá?
+ask_ddenf|elsa|Cái nào là cái đèn?
+ask_dees|elsa|Con nào là con dế?
+ask_duwa|elsa|Quả nào là quả dưa?
+ask_eechs|elsa|Con nào là con ếch?
+ask_fill|elsa|Chữ nào còn thiếu? Chạm vào chữ đúng nhé.
+ask_gaaus|elsa|Con nào là con gấu?
+ask_ghees|elsa|Cái nào là cái ghế?
+ask_giayf|elsa|Chiếc nào là chiếc giày?
+ask_gior|elsa|Cái nào là cái giỏ?
+ask_guwowng|elsa|Cái nào là cái gương?
+ask_hoa|elsa|Bông nào là bông hoa?
+ask_hoongf|elsa|Bông nào là bông hồng?
+ask_hoor|elsa|Con nào là con hổ?
+ask_kem|elsa|Cái nào là cây kem?
+ask_kenf|elsa|Cái nào là cái kèn?
+ask_keoj|elsa|Cái nào là cái kẹo?
+ask_khawn|elsa|Cái nào là cái khăn?
+ask_khir|elsa|Con nào là con khỉ?
+ask_luwar|elsa|Cái nào là ngọn lửa?
+ask_muwcj|elsa|Con nào là con mực?
+ask_mux|elsa|Cái nào là cái mũ?
+ask_naams|elsa|Cái nào là cây nấm?
+ask_nai|elsa|Con nào là con nai?
+ask_neens|elsa|Cái nào là cây nến?
+ask_ngocj|elsa|Cái nào là viên ngọc?
+ask_nguwaj|elsa|Con nào là con ngựa?
+ask_nho|elsa|Chùm nào là chùm nho?
+ask_nooif|elsa|Cái nào là cái nồi?
+ask_now|elsa|Cái nào là cái nơ?
+ask_nuis|elsa|Cái nào là ngọn núi?
+ask_oocs|elsa|Con nào là con ốc?
+ask_quatj|elsa|Cái nào là cái quạt?
+ask_roongf|elsa|Con nào là con rồng?
+ask_ruaf|elsa|Con nào là con rùa?
+ask_sachs|elsa|Cái nào là quyển sách?
+ask_sao|elsa|Cái nào là ngôi sao?
+ask_sen|elsa|Bông nào là bông sen?
+ask_socs|elsa|Con nào là con sóc?
+ask_tachs|elsa|Cái nào là cái tách?
+ask_taos|elsa|Quả nào là quả táo?
+ask_thiaf|elsa|Cái nào là cái thìa?
+ask_thor|elsa|Con nào là con thỏ?
+ask_toom|elsa|Con nào là con tôm?
+ask_traf|elsa|Cái nào là chén trà?
+ask_trawng|elsa|Cái nào là mặt trăng?
+ask_troongs|elsa|Cái nào là cái trống?
+ask_tuyeets|elsa|Bông nào là bông tuyết?
+ask_vays|elsa|Cái nào là cái váy?
+ask_vetj|elsa|Con nào là con vẹt?
+ask_voi|elsa|Con nào là con voi?
+aurora_intro|elsa|Đây là ngôi nhà nhỏ trong rừng của công chúa {Aurora}. Ôi, {Aurora} bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+aurora_name|elsa|Ngôi nhà trong rừng của {Aurora}!
+aurora_thanks|princess|Cảm ơn Nhím đã cứu tớ! Tớ là {Aurora}. Mình cùng hát với các bạn chim nhé!
+b_ball_end_0|elsa|Dạ hội vui quá! Cảm ơn Nhím nhé!
+b_ball_end_1|elsa|Vui quá đi! Mình đi cứu tiếp nhé!
+b_ball_end_2|elsa|Dạ hội thật tuyệt! Nhím giỏi quá!
+b_ball_end_3|elsa|Các công chúa cảm ơn Nhím đó!
+b_ball_end_4|elsa|Nhím múa đẹp quá! Mình đi tiếp nào!
+b_ball_end_5|elsa|Dạ hội xong rồi, các công chúa vui lắm!
+b_ball_end_6|elsa|Cảm ơn Nhím đã mang dạ hội về lâu đài!
+b_ball_end_7|elsa|Hoan hô Nhím! Mình đi cứu thêm công chúa nhé!
+b_elsa_tap_0|elsa|Hi hi! Nhột quá Nhím ơi!
+b_elsa_tap_1|elsa|Chị thương Nhím lắm!
+b_elsa_tap_2|elsa|Nhím xem chị làm phép tuyết nè!
+b_elsa_tap_3|elsa|Ôi, Nhím chạm vào chị à? Hi hi!
+b_elsa_tap_4|elsa|Chị xoay một vòng cho Nhím xem nhé!
+b_elsa_tap_5|elsa|Tuyết rơi lấp lánh nè Nhím!
+b_elsa_tap_6|elsa|Nhím là bạn thân nhất của chị!
+b_elsa_tap_7|elsa|Hi hi, chị vui quá!
+b_elsa_tap_8|elsa|Nhím có thấy bông tuyết không?
+b_elsa_tap_9|elsa|Chị ôm Nhím một cái nè!
+b_hall_hello_0|elsa|Chào Nhím! Mình đi cứu công chúa nào tiếp theo? Chạm vào bệ đang sáng nhé.
+b_hall_hello_1|elsa|Nhím về rồi! Chị nhớ Nhím quá. Mình cứu thêm một công chúa nhé!
+b_hall_hello_2|elsa|Nhím ơi, các công chúa đang chờ Nhím đó. Chạm vào bệ đang sáng nào!
+b_hall_hello_3|elsa|A, Nhím đây rồi! Hôm nay mình đánh thức công chúa nào đây?
+b_hall_hello_4|elsa|Chào Hà An! Bệ nào đang sáng là cửa đã mở đó.
+b_hall_hello_5|elsa|Nhím sẵn sàng chưa? Mình cùng làm tan băng nào!
+b_hall_hello_6|elsa|Lâu đài vui hẳn lên khi có Nhím. Mình đi tiếp nhé!
+b_hall_hello_7|elsa|Nhím ơi, chạm vào một bệ đang sáng để vào phòng công chúa nhé.
+b_hall_idle_0|elsa|Nhím ơi, chạm vào bệ đang sáng để đi cứu công chúa nhé!
+b_hall_idle_1|elsa|Bệ nào đang lấp lánh là cửa đã mở đó Nhím.
+b_hall_idle_2|elsa|Chị đang chờ Nhím chọn một công chúa nè.
+b_hall_idle_3|elsa|Nhím chạm vào bệ có vòng sáng nhé!
+b_hall_idle_4|elsa|Các công chúa đang chờ Nhím đó!
+b_hall_idle_5|elsa|Mình đi cứu công chúa tiếp không Nhím?
+b_hall_idle_6|elsa|Nhím ơi, nhìn kìa, có bệ đang sáng đó!
+b_hall_idle_7|elsa|Chạm vào bệ đang nhún nhảy nhé Nhím.
+b_hall_locked_0|elsa|Cửa này còn khoá. Mình đi cứu công chúa ở bệ đang sáng trước nhé!
+b_hall_locked_1|elsa|Ôi, cửa này chưa mở được. Nhím chọn bệ đang sáng nhé.
+b_hall_locked_2|elsa|Cửa này cần thêm phép thuật. Mình cứu công chúa khác trước đã!
+b_hall_locked_3|elsa|Chưa mở được Nhím ơi. Bệ có vòng sáng mới vào được nhé.
+b_hall_locked_4|elsa|Cửa này còn ngủ say. Mình đi cửa đang sáng nhé!
+b_hall_locked_5|elsa|Khoá mất rồi! Cứu thêm công chúa thì cửa này sẽ mở.
+b_hall_locked_6|elsa|Nhím chọn bệ đang lấp lánh nhé, cửa này chưa mở.
+b_hall_locked_7|elsa|Cửa này để sau nhé Nhím. Mình đi cửa đang sáng!
+b_hall_new_door_0|elsa|Một cánh cửa mới đã mở ra!
+b_hall_new_door_1|elsa|Nhìn kìa, có cửa mới mở rồi!
+b_hall_new_door_2|elsa|Cửa mới sáng lên rồi Nhím ơi!
+b_hall_new_door_3|elsa|Lại thêm một phòng công chúa mở cửa!
+b_hall_new_door_4|elsa|Ồ, cánh cửa kia vừa mở ra đó!
+b_hall_new_door_5|elsa|Có thêm một công chúa đang chờ Nhím kìa!
+b_hall_new_door_6|elsa|Cửa mới đã mở, mình đi cứu tiếp nhé!
+b_hall_new_door_7|elsa|Phép thuật của Nhím vừa mở thêm một cánh cửa!
+b_hall_saved_tap_0|elsa|Công chúa này tỉnh rồi! Mình vào chơi với bạn ấy nhé.
+b_hall_saved_tap_1|elsa|Bạn ấy tỉnh rồi! Vào chơi thêm nhé Nhím.
+b_hall_saved_tap_2|elsa|Mình vào thăm bạn ấy nào!
+b_hall_saved_tap_3|elsa|Công chúa này đang chờ Nhím vào chơi đó.
+b_hall_saved_tap_4|elsa|Vào chơi lại với bạn ấy nhé!
+b_hall_saved_tap_5|elsa|Bạn ấy vui lắm khi Nhím quay lại!
+b_hall_saved_tap_6|elsa|Mình vào phòng bạn ấy chơi tiếp nhé.
+b_hall_saved_tap_7|elsa|Đi thăm công chúa nào!
+b_hall_welcome_0|elsa|Công chúa đã về đại sảnh rồi! Nhím giỏi quá!
+b_hall_welcome_1|elsa|Hoan hô! Thêm một công chúa về với lâu đài!
+b_hall_welcome_2|elsa|Nhìn kìa, bạn ấy về bệ của mình rồi! Cảm ơn Nhím!
+b_hall_welcome_3|elsa|Nhím làm được rồi! Đại sảnh sáng thêm một chút nữa!
+b_hall_welcome_4|elsa|Tuyệt quá! Công chúa đang vẫy Nhím đó!
+b_hall_welcome_5|elsa|Thêm một ngôi sao cho Nhím nè!
+b_hall_welcome_6|elsa|Lâu đài vui hơn rồi, nhờ có Nhím đó!
+b_hall_welcome_7|elsa|Công chúa đã tỉnh và về nhà rồi. Nhím giỏi lắm!
+b_hint_0|elsa|Chạm vào cái đang nhấp nháy nhé.
+b_hint_1|elsa|Nhím nhìn cái đang sáng lên kìa!
+b_hint_2|elsa|Chị chỉ cho Nhím nè, cái đang nhấp nháy đó!
+b_hint_3|elsa|Cái đang nhún nhảy là đúng đó Nhím.
+b_hint_4|elsa|Nhím chạm vào cái lấp lánh nhé!
+b_hint_5|elsa|Gợi ý nè: cái đang sáng đó!
+b_hint_6|elsa|Thử cái đang nhấp nháy xem Nhím!
+b_hint_7|elsa|Chị giúp Nhím nhé, chạm vào cái đang sáng.
+b_idle_0|elsa|Nhím ơi, chị đang chờ Nhím nè.
+b_idle_1|elsa|Nhím chọn đi nào!
+b_idle_2|elsa|Nhím nghe lại câu hỏi nhé.
+b_idle_3|elsa|Chị hỏi lại nhé Nhím.
+b_idle_4|elsa|Nhím ơi, mình chơi tiếp nào!
+b_idle_5|elsa|Công chúa đang chờ Nhím đó.
+b_idle_6|elsa|Nhím thử chạm vào một cái xem!
+b_idle_7|elsa|Không sao, Nhím cứ từ từ nhé.
+b_last_0|elsa|Câu cuối cùng rồi, Nhím cố lên!
+b_last_1|elsa|Câu cuối nè! Công chúa sắp tỉnh rồi!
+b_last_2|elsa|Chỉ còn một câu nữa thôi Nhím ơi!
+b_last_3|elsa|Câu cuối cùng! Nhím làm được mà!
+b_last_4|elsa|Một câu nữa là công chúa tỉnh dậy đó!
+b_last_5|elsa|Câu cuối rồi, chị tin Nhím!
+b_last_6|elsa|Nhím ơi, câu cuối cùng đây!
+b_last_7|elsa|Sắp xong rồi! Câu cuối nè!
+b_math_count_0|elsa|Mình cùng đếm nhé!
+b_math_count_1|elsa|Nhím đếm cùng chị nào!
+b_math_count_2|elsa|Đếm nào Nhím ơi!
+b_math_count_3|elsa|Mình đếm từng cái nhé!
+b_math_count_4|elsa|Chị đếm, Nhím đếm theo nhé!
+b_math_count_5|elsa|Nào, mình đếm nhé!
+b_math_count_6|elsa|Nhím nhìn chị đếm nè!
+b_math_count_7|elsa|Cùng đếm nào!
+b_math_retry_0|elsa|Nhím chọn lại số nhé!
+b_math_retry_1|elsa|Bây giờ Nhím chọn số đúng nhé!
+b_math_retry_2|elsa|Nhím thử chọn lại nào!
+b_math_retry_3|elsa|Đếm xong rồi, Nhím chọn số nhé!
+b_math_retry_4|elsa|Chọn lại nhé Nhím ơi!
+b_math_retry_5|elsa|Vậy là mấy nhỉ? Nhím chọn đi!
+b_math_retry_6|elsa|Nhím chạm vào số đúng nhé!
+b_math_retry_7|elsa|Thử lại nào, Nhím làm được mà!
+b_melt_0|elsa|Băng tan rồi kìa!
+b_melt_1|elsa|Băng tan thêm rồi! Sắp được rồi!
+b_melt_2|elsa|Nhìn kìa, băng đang tan đó!
+b_melt_3|elsa|Băng mỏng đi rồi!
+b_melt_4|elsa|Công chúa ấm lên rồi kìa!
+b_melt_5|elsa|Một lớp băng tan rồi!
+b_melt_6|elsa|Băng chảy thành nước rồi!
+b_melt_7|elsa|Ồ, băng nứt ra rồi!
+b_melt_8|elsa|Phép thuật làm băng tan rồi!
+b_melt_9|elsa|Sắp thấy công chúa rồi!
+b_next_0|elsa|Thêm một câu nữa nào!
+b_next_1|elsa|Câu tiếp theo nè!
+b_next_2|elsa|Nhím giỏi quá, mình làm tiếp nhé!
+b_next_3|elsa|Còn một chút nữa thôi!
+b_next_4|elsa|Mình làm câu tiếp nhé!
+b_next_5|elsa|Nhím nghe câu này nhé!
+b_next_6|elsa|Tiếp nào Nhím ơi!
+b_next_7|elsa|Băng sắp tan rồi, thêm câu nữa nào!
+b_praise_0|elsa|Giỏi lắm!
+b_praise_1|elsa|Tuyệt vời!
+b_praise_10|elsa|Nhím giỏi ghê!
+b_praise_11|elsa|Đỉnh quá!
+b_praise_2|elsa|Nhím giỏi quá!
+b_praise_3|elsa|Hoan hô Nhím!
+b_praise_4|elsa|Nhím làm phép hay quá!
+b_praise_5|elsa|Chị thích quá!
+b_praise_6|elsa|Siêu quá Nhím ơi!
+b_praise_7|elsa|Nhím thông minh quá!
+b_praise_8|elsa|Phép thuật mạnh lắm!
+b_praise_9|elsa|Hay lắm Nhím!
+b_replay_done_0|elsa|Nhím giỏi quá! Công chúa múa cho Nhím xem nè!
+b_replay_done_1|elsa|Hoan hô! Công chúa xoay váy cảm ơn Nhím đó!
+b_replay_done_2|elsa|Tuyệt quá! Công chúa vui lắm!
+b_replay_done_3|elsa|Nhím giỏi ghê! Công chúa múa nè!
+b_replay_done_4|elsa|Hay quá! Công chúa nhún chào Nhím đó!
+b_replay_done_5|elsa|Xong rồi! Công chúa cảm ơn Nhím!
+b_replay_done_6|elsa|Nhím chơi giỏi quá! Xem công chúa múa nè!
+b_replay_done_7|elsa|Hoan hô Nhím! Công chúa thích lắm!
+b_replay_intro_0|elsa|Công chúa tỉnh rồi! Nhím chạm chơi lại để chơi thêm với bạn ấy nhé.
+b_replay_intro_1|elsa|Bạn ấy đang chờ Nhím chơi cùng đó!
+b_replay_intro_2|elsa|Nhím chạm chơi lại nhé, công chúa muốn chơi thêm!
+b_replay_intro_3|elsa|Mình chơi với công chúa nhé Nhím!
+b_replay_intro_4|elsa|Chạm chơi lại để chơi thêm nhé!
+b_replay_intro_5|elsa|Công chúa vui quá vì Nhím quay lại!
+b_replay_intro_6|elsa|Nhím muốn chơi thêm không? Chạm chơi lại nhé!
+b_replay_intro_7|elsa|Bạn ấy vẫy Nhím kìa!
+b_replay_start_0|elsa|Mình cùng chơi thêm nhé!
+b_replay_start_1|elsa|Chơi lại nào Nhím ơi!
+b_replay_start_2|elsa|Thêm một lượt nữa nhé!
+b_replay_start_3|elsa|Công chúa muốn chơi với Nhím đó!
+b_replay_start_4|elsa|Mình chơi tiếp nào!
+b_replay_start_5|elsa|Nhím chơi thêm cho công chúa xem nhé!
+b_replay_start_6|elsa|Lại nào, lại nào!
+b_replay_start_7|elsa|Mình chơi thêm ba câu nhé Nhím!
+b_retry_0|elsa|Chưa đúng rồi, thử lại nhé!
+b_retry_1|elsa|Gần đúng rồi, Nhím thử lại nào!
+b_retry_2|elsa|Không sao đâu, mình thử lại nhé!
+b_retry_3|elsa|Ồ, chưa phải rồi. Nhím chọn lại nhé!
+b_retry_4|elsa|Thử lại nào Nhím ơi!
+b_retry_5|elsa|Chưa đúng, nhưng Nhím giỏi lắm. Thử lại nhé!
+b_retry_6|elsa|Hừm, chưa phải. Nhím nghe lại nhé!
+b_retry_7|elsa|Không sao, chị cũng hay nhầm mà. Thử lại nào!
+b_retry_8|elsa|Nhím thử cái khác xem nào!
+b_retry_9|elsa|Chưa đúng rồi, mình cùng thử lại nha!
+b_right_0|elsa|Đúng rồi!
+b_right_1|elsa|Đúng rồi Nhím ơi!
+b_right_10|elsa|Chuẩn luôn!
+b_right_11|elsa|Đúng rồi nè!
+b_right_2|elsa|Chính xác!
+b_right_3|elsa|Giỏi quá!
+b_right_4|elsa|Đúng rồi, tuyệt quá!
+b_right_5|elsa|Nhím đúng rồi!
+b_right_6|elsa|Đúng luôn!
+b_right_7|elsa|A, đúng rồi!
+b_right_8|elsa|Hay quá, đúng rồi!
+b_right_9|elsa|Đúng rồi, Nhím giỏi ghê!
+b_start_0|elsa|Nhím ơi, trả lời đúng để làm tan băng nhé!
+b_start_1|elsa|Mình cùng làm tan băng nào!
+b_start_2|elsa|Câu đầu tiên đây Nhím ơi!
+b_start_3|elsa|Nhím giúp chị làm phép nhé!
+b_start_4|elsa|Bắt đầu nào! Nhím nghe chị hỏi nhé.
+b_start_5|elsa|Mình bắt đầu phép thuật nhé Nhím!
+b_start_6|elsa|Nhím sẵn sàng chưa? Câu đầu tiên nè!
+b_start_7|elsa|Mỗi câu đúng là băng tan một chút đó!
+b_tap_home_0|elsa|Chạm vào nút lâu đài để về đại sảnh nhé.
+b_tap_home_1|elsa|Mình về đại sảnh nhé Nhím, chạm vào nút lâu đài.
+b_tap_home_2|elsa|Nhím muốn về đại sảnh thì chạm nút lâu đài nhé.
+b_tap_home_3|elsa|Chạm nút vàng để về đại sảnh nào!
+b_tap_home_4|elsa|Về đại sảnh thôi Nhím, chạm vào nút lâu đài.
+b_tap_home_5|elsa|Nhím chạm nút lâu đài, mình về gặp các công chúa khác nhé.
+b_tap_home_6|elsa|Hoặc Nhím chạm chơi lại để chơi thêm nhé!
+b_tap_home_7|elsa|Mình về đại sảnh đưa công chúa về nhà nhé!
+b_wake_0|elsa|Công chúa tỉnh dậy rồi!
+b_wake_1|elsa|Băng vỡ rồi! Công chúa tỉnh rồi!
+b_wake_2|elsa|Hoan hô! Bạn ấy tỉnh dậy rồi!
+b_wake_3|elsa|Nhìn kìa, công chúa mở mắt rồi!
+b_wake_4|elsa|Phép thuật thành công rồi!
+b_wake_5|elsa|Nhím đã đánh thức công chúa!
+b_wake_6|elsa|Công chúa tỉnh rồi, nhờ có Nhím đó!
+b_wake_7|elsa|Tuyệt vời! Băng tan hết rồi!
+ball_3|elsa|Tuyệt vời! Nhím đã cứu được ba công chúa! Mở dạ hội thôi!
+ball_6|elsa|Sáu công chúa rồi! Nhím ơi, dạ hội lần thứ hai nào!
+ball_9|elsa|Chín công chúa! Hà An giỏi quá! Dạ hội lần thứ ba!
+ball_final|elsa|Hà An đã đánh thức tất cả các công chúa! Lâu đài lại vui như xưa. Chị {Elsa} cũng thay váy băng để dự dạ hội với Nhím đây!
+belle_intro|elsa|Đây là thư viện phép thuật của công chúa {Belle}. Ôi, {Belle} bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+belle_name|elsa|Thư viện của {Belle}!
+belle_thanks|princess|Cảm ơn Nhím đã cứu tớ! Tớ là {Belle}. Mình cùng đọc truyện cổ tích nhé!
+c_b|elsa|bờ
+c_c|elsa|cờ
+c_ch|elsa|chờ
+c_d|elsa|dờ
+c_dd|elsa|đờ
+c_g|elsa|gờ
+c_gh|elsa|gờ
+c_gi|elsa|giờ
+c_h|elsa|hờ
+c_k|elsa|ca
+c_kh|elsa|khờ
+c_l|elsa|lờ
+c_m|elsa|mờ
+c_n|elsa|nờ
+c_ng|elsa|ngờ
+c_nh|elsa|nhờ
+c_p|elsa|pờ
+c_qu|elsa|quờ
+c_r|elsa|rờ
+c_s|elsa|sờ
+c_t|elsa|tờ
+c_th|elsa|thờ
+c_tr|elsa|trờ
+c_v|elsa|vờ
+c_x|elsa|xờ
+cinderella_intro|elsa|Đây là cầu thang trong cung điện của Lọ Lem. Sắp nửa đêm rồi, mà Lọ Lem bị đóng băng mất! Nhím trả lời đúng ba câu để làm tan băng nhé!
+cinderella_name|elsa|Cầu thang của Lọ Lem!
+cinderella_thanks|princess|Cảm ơn Nhím đã cứu tớ! Tớ là Lọ Lem, tên tiếng Anh là {Cinderella}. Mình cùng lên xe bí ngô đi dự vũ hội nhé!
+fam_all|ba|Cả nhà cùng vỗ tay cho Nhím nào!
+fam_ba_cuong_0|ba|Nhím ơi, cố lên! Ba tin con!
+fam_ba_cuong_1|ba|Nhím của ba giỏi quá!
+fam_ba_cuong_2|ba|Ba giơ ngón tay cái cho Nhím nè!
+fam_ba_cuong_ball|ba|Hoan hô Nhím!
+fam_ba_tuyet_0|batuyet|Bà thương Nhím nhiều lắm!
+fam_ba_tuyet_1|batuyet|Cháu bà ngoan quá!
+fam_ba_tuyet_2|batuyet|Bà ôm Nhím một cái thật chặt!
+fam_ba_tuyet_ball|batuyet|Bà thương Nhím!
+fam_bac_hanh_0|bachanh|Bác thơm Nhím một cái!
+fam_bac_hanh_1|bachanh|Nhím thông minh quá!
+fam_bac_hanh_2|bachanh|Nhím ơi, hoan hô!
+fam_bac_hanh_ball|bachanh|Thơm Nhím nào!
+fam_me_yen_0|me|Nhím giỏi quá! Mẹ tự hào về con!
+fam_me_yen_1|me|Mẹ thương Nhím nhất trên đời!
+fam_me_yen_2|me|Nhím ơi, tuyệt vời!
+fam_me_yen_ball|me|Nhím giỏi nhất!
+fam_ong_cuong_0|ong|Ông vỗ tay cho Nhím nè!
+fam_ong_cuong_1|ong|Cháu ông giỏi quá!
+fam_ong_cuong_2|ong|Ông cười tít mắt vì Nhím đó!
+fam_ong_cuong_ball|ong|Tuyệt vời cháu ơi!
+family_wall|elsa|Đây là cả nhà của Nhím đó!
+hall_intro_first|elsa|Chào Nhím! Chị là {Elsa}. Các công chúa trong lâu đài bị phép thuật đóng băng hết rồi. Nhím giúp chị đánh thức các bạn ấy nhé! Chạm vào bệ đang sáng đi nào!
+jasmine_intro|elsa|Đây là ban công cung điện của công chúa {Jasmine}. Ôi, {Jasmine} bị đóng băng mất rồi! Nhím trả lời đúng ba câu để làm tan băng nhé!
+jasmine_name|elsa|Ban công của {Jasmine}!
+jasmine_thanks|princess|Cảm ơn Nhím đã cứu tớ! Tớ là {Jasmine}. Mình cùng ngồi thảm bay đi ngắm trăng nhé!
+m_eq|elsa|bằng
+m_eq_q|elsa|bằng mấy?
+m_may|elsa|mấy
+m_minus|elsa|trừ
+m_plus|elsa|cộng
+m_want|elsa|Chị muốn có
+merida_intro|elsa|Đây là rừng xanh của công chúa {Merida}, có vòng đá cổ và những đốm sáng xanh kỳ diệu. Ôi, {Merida} bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
+merida_name|elsa|Rừng xanh của {Merida}!
+merida_thanks|princess|Cảm ơn Nhím đã cứu tớ! Tớ là {Merida}. Mình cùng đi bắn cung và cưỡi ngựa nhé!
+mt_anna_addend|elsa|nữa.
+mt_anna_addpre|elsa|Chị làm phép thêm
+mt_anna_has|elsa|Ngoài sân có
+mt_anna_noun|elsa|bạn người tuyết
+mt_anna_qadd|elsa|Có tất cả mấy bạn người tuyết?
+mt_anna_qmiss|elsa|Phải làm thêm mấy bạn nữa?
+mt_anna_qsub|elsa|Còn lại mấy bạn người tuyết?
+mt_anna_subend|elsa|tan mất rồi.
+mt_ariel_addend|elsa|bơi tới.
+mt_ariel_addpre|elsa|Lại có thêm
+mt_ariel_has|elsa|Trong hang có
+mt_ariel_noun|elsa|con cá nhỏ
+mt_ariel_qadd|elsa|Có tất cả mấy con cá nhỏ?
+mt_ariel_qmiss|elsa|Phải có thêm mấy con nữa?
+mt_ariel_qsub|elsa|Còn lại mấy con cá nhỏ?
+mt_ariel_subend|elsa|bơi đi chơi mất rồi.
+mt_aurora_addend|elsa|nữa.
+mt_aurora_addpre|elsa|Lại bay tới thêm
+mt_aurora_has|elsa|Trong vườn có
+mt_aurora_noun|elsa|con bướm
+mt_aurora_qadd|elsa|Có tất cả mấy con bướm?
+mt_aurora_qmiss|elsa|Phải bay tới thêm mấy con nữa?
+mt_aurora_qsub|elsa|Còn lại mấy con bướm?
+mt_aurora_subend|elsa|bay đi mất rồi.
+mt_belle_addend|elsa|nữa.
+mt_belle_addpre|elsa|Chị cắm thêm
+mt_belle_has|elsa|Trong bình có
+mt_belle_noun|elsa|bông hồng
+mt_belle_qadd|elsa|Có tất cả mấy bông hồng?
+mt_belle_qmiss|elsa|Phải cắm thêm mấy bông nữa?
+mt_belle_qsub|elsa|Còn lại mấy bông hồng?
+mt_belle_subend|elsa|bị gió thổi bay mất.
+mt_cinderella_addend|elsa|nữa.
+mt_cinderella_addpre|elsa|Bà tiên làm phép thêm
+mt_cinderella_has|elsa|Trong vườn có
+mt_cinderella_noun|elsa|quả bí ngô
+mt_cinderella_qadd|elsa|Có tất cả mấy quả bí ngô?
+mt_cinderella_qmiss|elsa|Phải làm phép thêm mấy quả nữa?
+mt_cinderella_qsub|elsa|Còn lại mấy quả bí ngô?
+mt_cinderella_subend|elsa|lăn đi mất rồi.
+mt_gem_addend|elsa|nữa.
+mt_gem_addpre|elsa|Chị gắn thêm
+mt_gem_has|elsa|Trên vương miện có
+mt_gem_noun|elsa|viên ngọc
+mt_gem_qadd|elsa|Có tất cả mấy viên ngọc?
+mt_gem_qmiss|elsa|Phải gắn thêm mấy viên nữa?
+mt_gem_qsub|elsa|Còn lại mấy viên ngọc?
+mt_gem_subend|elsa|rơi xuống mất rồi.
+mt_jasmine_addend|elsa|nữa.
+mt_jasmine_addpre|elsa|Chị mang thêm
+mt_jasmine_has|elsa|Trên bàn có
+mt_jasmine_noun|elsa|cây đèn thần
+mt_jasmine_qadd|elsa|Có tất cả mấy cây đèn thần?
+mt_jasmine_qmiss|elsa|Phải mang thêm mấy cây nữa?
+mt_jasmine_qsub|elsa|Còn lại mấy cây đèn thần?
+mt_jasmine_subend|elsa|được thảm bay chở đi mất.
+mt_merida_addend|elsa|nữa.
+mt_merida_addpre|elsa|Lại chạy tới thêm
+mt_merida_has|elsa|Trong rừng có
+mt_merida_noun|elsa|chú gấu
+mt_merida_qadd|elsa|Có tất cả mấy chú gấu?
+mt_merida_qmiss|elsa|Phải có thêm mấy chú nữa?
+mt_merida_qsub|elsa|Còn lại mấy chú gấu?
+mt_merida_subend|elsa|chạy về hang mất rồi.
+mt_mulan_addend|elsa|nữa.
+mt_mulan_addpre|elsa|Chị làm nở thêm
+mt_mulan_has|elsa|Trên cành có
+mt_mulan_noun|elsa|bông hoa đào
+mt_mulan_qadd|elsa|Có tất cả mấy bông hoa đào?
+mt_mulan_qmiss|elsa|Phải làm nở thêm mấy bông nữa?
+mt_mulan_qsub|elsa|Còn lại mấy bông hoa đào?
+mt_mulan_subend|elsa|bị gió thổi bay mất.
+mt_rapunzel_addend|elsa|nữa.
+mt_rapunzel_addpre|elsa|Chị thả thêm
+mt_rapunzel_has|elsa|Trên trời có
+mt_rapunzel_noun|elsa|chiếc đèn lồng
+mt_rapunzel_qadd|elsa|Có tất cả mấy chiếc đèn lồng?
+mt_rapunzel_qmiss|elsa|Phải thả thêm mấy chiếc nữa?
+mt_rapunzel_qsub|elsa|Còn lại mấy chiếc đèn lồng?
+mt_rapunzel_subend|elsa|bay xa mất rồi.
+mt_snow_addend|elsa|nữa.
+mt_snow_addpre|elsa|Chị làm phép thêm
+mt_snow_has|elsa|Chị {Elsa} có
+mt_snow_noun|elsa|bông tuyết
+mt_snow_qadd|elsa|Có tất cả mấy bông tuyết?
+mt_snow_qmiss|elsa|Phải làm phép thêm mấy bông nữa?
+mt_snow_qsub|elsa|Còn lại mấy bông tuyết?
+mt_snow_subend|elsa|tan mất rồi.
+mt_snowwhite_addend|elsa|nữa.
+mt_snowwhite_addpre|elsa|Bạn chim hái thêm
+mt_snowwhite_has|elsa|Trong giỏ có
+mt_snowwhite_noun|elsa|quả táo
+mt_snowwhite_qadd|elsa|Có tất cả mấy quả táo?
+mt_snowwhite_qmiss|elsa|Phải hái thêm mấy quả nữa?
+mt_snowwhite_qsub|elsa|Còn lại mấy quả táo?
+mt_snowwhite_subend|elsa|lăn ra ngoài mất rồi.
+mt_tiana_addend|elsa|nữa.
+mt_tiana_addpre|elsa|Lại nhảy lên thêm
+mt_tiana_has|elsa|Trên lá sen có
+mt_tiana_noun|elsa|chú ếch
+mt_tiana_qadd|elsa|Có tất cả mấy chú ếch?
+mt_tiana_qmiss|elsa|Phải nhảy lên thêm mấy chú nữa?
+mt_tiana_qsub|elsa|Còn lại mấy chú ếch?
+mt_tiana_subend|elsa|nhảy xuống nước mất rồi.
+mulan_intro|elsa|Đây là vườn hoa đào của công chúa Mộc Lan. Ôi, Mộc Lan bị đóng băng mất rồi! Nhím trả lời đúng ba câu để làm tan băng nhé!
+mulan_name|elsa|Vườn hoa đào của Mộc Lan!
+mulan_thanks|princess|Cảm ơn Nhím đã cứu tớ! Tớ là Mộc Lan, tên tiếng Anh là {Mulan}. Nhím dũng cảm lắm!
+n1|elsa|một
+n10|elsa|mười
+n2|elsa|hai
+n3|elsa|ba
+n4|elsa|bốn
+n5|elsa|năm
+n6|elsa|sáu
+n7|elsa|bảy
+n8|elsa|tám
+n9|elsa|chín
+name_aams|elsa|cái ấm
+name_banhs|elsa|cái bánh
+name_bis|elsa|quả bí
+name_cas|elsa|con cá
+name_chaor|elsa|cái chảo
+name_chim|elsa|con chim
+name_chooir|elsa|cái chổi
+name_cua|elsa|con cua
+name_cung|elsa|cái cung
+name_cus|elsa|con cú
+name_daau|elsa|quả dâu
+name_ddas|elsa|hòn đá
+name_ddenf|elsa|cái đèn
+name_dees|elsa|con dế
+name_duwa|elsa|quả dưa
+name_eechs|elsa|con ếch
+name_gaaus|elsa|con gấu
+name_ghees|elsa|cái ghế
+name_giayf|elsa|chiếc giày
+name_gior|elsa|cái giỏ
+name_guwowng|elsa|cái gương
+name_hoa|elsa|bông hoa
+name_hoongf|elsa|bông hồng
+name_hoor|elsa|con hổ
+name_kem|elsa|cây kem
+name_kenf|elsa|cái kèn
+name_keoj|elsa|cái kẹo
+name_khawn|elsa|cái khăn
+name_khir|elsa|con khỉ
+name_luwar|elsa|ngọn lửa
+name_muwcj|elsa|con mực
+name_mux|elsa|cái mũ
+name_naams|elsa|cây nấm
+name_nai|elsa|con nai
+name_neens|elsa|cây nến
+name_ngocj|elsa|viên ngọc
+name_nguwaj|elsa|con ngựa
+name_nho|elsa|chùm nho
+name_nooif|elsa|cái nồi
+name_now|elsa|cái nơ
+name_nuis|elsa|ngọn núi
+name_oocs|elsa|con ốc
+name_quatj|elsa|cái quạt
+name_roongf|elsa|con rồng
+name_ruaf|elsa|con rùa
+name_sachs|elsa|quyển sách
+name_sao|elsa|ngôi sao
+name_sen|elsa|bông sen
+name_socs|elsa|con sóc
+name_tachs|elsa|cái tách
+name_taos|elsa|quả táo
+name_thiaf|elsa|cái thìa
+name_thor|elsa|con thỏ
+name_toom|elsa|con tôm
+name_traf|elsa|chén trà
+name_trawng|elsa|mặt trăng
+name_troongs|elsa|cái trống
+name_tuyeets|elsa|bông tuyết
+name_vays|elsa|cái váy
+name_vetj|elsa|con vẹt
+name_voi|elsa|con voi
+rapunzel_intro|elsa|Đây là tòa tháp của công chúa {Rapunzel}. Ôi, {Rapunzel} bị đóng băng mất rồi! Nhím trả lời đúng ba câu để làm tan băng nhé!
+rapunzel_name|elsa|Tòa tháp của {Rapunzel}!
+rapunzel_thanks|princess|Cảm ơn Nhím nhé! Tớ là {Rapunzel}. Tối nay mình cùng ngắm đèn lồng bay lên trời nhé!
+s_banh|elsa|banh
+s_bi|elsa|bi
+s_ca|elsa|ca
+s_chao|elsa|chao
+s_chim|elsa|chim
+s_chooi|elsa|chôi
+s_cu|elsa|cu
+s_cua|elsa|cua
+s_cung|elsa|cung
+s_daau|elsa|dâu
+s_dda|elsa|đa
+s_dden|elsa|đen
+s_dee|elsa|dê
+s_duwa|elsa|dưa
+s_gaau|elsa|gâu
+s_ghee|elsa|ghê
+s_giay|elsa|giay
+s_gio|elsa|gio
+s_guwowng|elsa|gương
+s_hoa|elsa|hoa
+s_hoo|elsa|hô
+s_hoong|elsa|hông
+s_kem|elsa|kem
+s_ken|elsa|ken
+s_keo|elsa|keo
+s_khawn|elsa|khăn
+s_khi|elsa|khi
+s_luwa|elsa|lưa
+s_mu|elsa|mu
+s_muwcs|elsa|mức
+s_naam|elsa|nâm
+s_nai|elsa|nai
+s_neen|elsa|nên
+s_ngocs|elsa|ngóc
+s_nguwa|elsa|ngưa
+s_nho|elsa|nho
+s_nooi|elsa|nôi
+s_now|elsa|nơ
+s_nui|elsa|nui
+s_quats|elsa|quát
+s_roong|elsa|rông
+s_rua|elsa|rua
+s_sao|elsa|sao
+s_sen|elsa|sen
+s_tao|elsa|tao
+s_thia|elsa|thia
+s_tho|elsa|tho
+s_toom|elsa|tôm
+s_tra|elsa|tra
+s_trawng|elsa|trăng
+s_troong|elsa|trông
+s_vay|elsa|vay
+s_vets|elsa|vét
+s_voi|elsa|voi
+snowwhite_intro|elsa|Đây là ngôi nhà nhỏ trong rừng của công chúa Bạch Tuyết. Ôi, Bạch Tuyết bị đóng băng mất rồi! Nhím trả lời đúng ba câu để làm tan băng nhé!
+snowwhite_name|elsa|Ngôi nhà nhỏ của Bạch Tuyết!
+snowwhite_thanks|princess|Cảm ơn Nhím đã cứu tớ! Tớ là Bạch Tuyết, tên tiếng Anh là {Snow White}. Mình cùng đi hái táo với các bạn chim nhé!
+t_hoi|elsa|hỏi
+t_huyen|elsa|huyền
+t_nang|elsa|nặng
+t_nga|elsa|ngã
+t_sac|elsa|sắc
+tiana_intro|elsa|Đây là đầm sen của công chúa {Tiana}, có đom đóm và những chú ếch xanh. Ôi, {Tiana} bị đóng băng mất rồi! Nhím trả lời đúng ba câu để làm tan băng nhé!
+tiana_name|elsa|Đầm sen của {Tiana}!
+tiana_thanks|princess|Cảm ơn Nhím đã cứu tớ! Tớ là {Tiana}. Tớ sẽ làm bánh thật ngon mời Nhím ăn nhé!
+v_a|elsa|a
+v_aa|elsa|ớ
+v_aam|elsa|âm
+v_aau|elsa|âu
+v_achs|elsa|ách
+v_ai|elsa|ai
+v_anh|elsa|anh
+v_ao|elsa|ao
+v_ats|elsa|át
+v_aw|elsa|á
+v_awn|elsa|ăn
+v_awng|elsa|ăng
+v_ay|elsa|ay
+v_e|elsa|e
+v_ee|elsa|ê
+v_eechs|elsa|ếch
+v_een|elsa|ên
+v_em|elsa|em
+v_en|elsa|en
+v_eo|elsa|eo
+v_ets|elsa|ét
+v_i|elsa|i
+v_ia|elsa|ia
+v_im|elsa|im
+v_o|elsa|o
+v_oa|elsa|oa
+v_ocs|elsa|óc
+v_oi|elsa|oi
+v_oo|elsa|ô
+v_oocs|elsa|ốc
+v_ooi|elsa|ôi
+v_oom|elsa|ôm
+v_oong|elsa|ông
+v_ow|elsa|ơ
+v_u|elsa|u
+v_ua|elsa|ua
+v_ui|elsa|ui
+v_ung|elsa|ung
+v_uw|elsa|ư
+v_uwa|elsa|ưa
+v_uwcs|elsa|ức
+v_uwow|elsa|ưa
+v_uwowng|elsa|ương
+v_uyeets|elsa|uyết
+v_y|elsa|i
+v_yee|elsa|ia
+w_aams|elsa|ấm
+w_banhs|elsa|bánh
+w_bis|elsa|bí
+w_cas|elsa|cá
+w_chaor|elsa|chảo
+w_chooir|elsa|chổi
+w_cus|elsa|cú
+w_ddas|elsa|đá
+w_ddenf|elsa|đèn
+w_dees|elsa|dế
+w_gaaus|elsa|gấu
+w_ghees|elsa|ghế
+w_giayf|elsa|giày
+w_gior|elsa|giỏ
+w_hoongf|elsa|hồng
+w_hoor|elsa|hổ
+w_kenf|elsa|kèn
+w_keoj|elsa|kẹo
+w_khir|elsa|khỉ
+w_luwar|elsa|lửa
+w_muwcj|elsa|mực
+w_mux|elsa|mũ
+w_naams|elsa|nấm
+w_neens|elsa|nến
+w_ngocj|elsa|ngọc
+w_nguwaj|elsa|ngựa
+w_nooif|elsa|nồi
+w_nuis|elsa|núi
+w_quatj|elsa|quạt
+w_roongf|elsa|rồng
+w_ruaf|elsa|rùa
+w_sachs|elsa|sách
+w_socs|elsa|sóc
+w_tachs|elsa|tách
+w_taos|elsa|táo
+w_thiaf|elsa|thìa
+w_thor|elsa|thỏ
+w_traf|elsa|trà
+w_troongs|elsa|trống
+w_tuyeets|elsa|tuyết
+w_vays|elsa|váy
+w_vetj|elsa|vẹt

@@ -1,5 +1,0 @@
-# Phòng Bạch Tuyết. key|text – giọng Linh macOS. Từ vựng (ask_/name_/token) KHÔNG viết ở đây: tự sinh từ src/rooms/snowwhite.ts.
-snowwhite_name|Ngôi nhà nhỏ của Bạch Tuyết!
-snowwhite_intro|Đây là ngôi nhà nhỏ trong rừng của công chúa Bạch Tuyết. Ôi, Bạch Tuyết bị đóng băng mất rồi! Nhím trả lời đúng ba câu để làm tan băng nhé!
-snowwhite_thanks|Cảm ơn Nhím đã cứu tớ! Tớ là Bạch Tuyết. Mình cùng đi hái táo với các bạn chim nhé!
-snowwhite_count|Có mấy quả táo? Chạm từng quả để đếm nhé.

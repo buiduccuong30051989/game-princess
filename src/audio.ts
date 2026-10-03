@@ -1,12 +1,26 @@
-// Audio: WebAudio, mở khoá bằng chạm đầu tiên (iPad Safari), clip m4a sinh sẵn + sfx ogg + hộp nhạc tổng hợp.
-// play() LUÔN resolve (kể cả khi thiếu file / context bị treo) để luồng game không bao giờ kẹt.
+// Audio: WebAudio, mở khoá bằng lần chạm đầu (iPad Safari: touchend / click / pointerup), giọng m4a sinh sẵn (Microsoft
+// Hoài My, scripts/gen-audio.py) + hiệu ứng tổng hợp bằng oscillator (không cần file: Safari iPad cũ không giải mã Ogg)
+// + hộp nhạc tổng hợp.
+// KHÔNG BAO GIỜ KẸT: play() LUÔN resolve — tải/giải mã treo > 6 s coi như không có clip; phát quá thời lượng + 1.5 s
+// (context bị iOS treo, onended không tới) thì tự xong.
 
 const clips = new Map<string, AudioBuffer | null>();
 const loading = new Map<string, Promise<AudioBuffer | null>>();
+/** ?mute=1 (soát lỗi / đo hiệu năng): không phát tiếng, mỗi câu coi như dài 150 ms. */
+const MUTE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('mute');
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let unlocked = false;
 const missing = new Set<string>();
+/** Mốc thời gian (ms) lần cuối có giọng bắt đầu / kết thúc: watchdog dùng để biết game còn "sống". */
+let lastActivity = typeof performance !== 'undefined' ? performance.now() : 0;
+export function audioActivity(): number { return lastActivity; }
+const touch = () => { lastActivity = performance.now(); };
+
+/** Nghe sự kiện giọng đọc (phụ đề có nhãn người nói: src/talk.ts). */
+type VoiceHook = (key: string, phase: 'start' | 'end') => void;
+let voiceHook: VoiceHook | null = null;
+export function setVoiceHook(fn: VoiceHook | null): void { voiceHook = fn; }
 
 function getCtx(): AudioContext {
   if (!ctx) {
@@ -22,10 +36,10 @@ function getCtx(): AudioContext {
 }
 function out(): GainNode { getCtx(); return master!; }
 
-/** Gọi ĐỒNG BỘ trong handler click/touchend đầu tiên. */
+/** Gọi ĐỒNG BỘ trong handler chạm đầu tiên (touchend / click / pointerup). */
 export function unlockAudio(): void {
   const c = getCtx();
-  if (c.state === 'suspended') void c.resume();
+  if (c.state !== 'running') void c.resume().catch(() => { /* chờ chạm sau */ });
   if (!unlocked) {
     // phát 1 buffer câm để iOS chịu mở loa
     const src = c.createBufferSource();
@@ -37,19 +51,21 @@ export function unlockAudio(): void {
 }
 /**
  * iPad: khoá màn hình / chuyển app / Siri → context 'interrupted'/'suspended', không tự chạy lại → game câm.
- * Mỗi lần quay lại trang hoặc chạm bất kỳ đâu: resume().
+ * Quay lại trang, lấy lại focus hay chạm bất kỳ đâu: resume(). Chạm đầu tiên ở bất kỳ đâu cũng mở khoá.
  */
 function resumeIfNeeded(): void {
   if (ctx && unlocked && ctx.state !== 'running') void ctx.resume().catch(() => { /* chờ chạm sau */ });
 }
 if (typeof window !== 'undefined') {
   document.addEventListener('visibilitychange', () => { if (!document.hidden) resumeIfNeeded(); });
-  window.addEventListener('pointerdown', resumeIfNeeded, { capture: true });
+  window.addEventListener('pageshow', resumeIfNeeded);
   window.addEventListener('focus', resumeIfNeeded);
+  for (const ev of ['touchend', 'click', 'pointerup'] as const) {
+    window.addEventListener(ev, () => { if (!unlocked || ctx?.state !== 'running') unlockAudio(); }, { capture: true, passive: true });
+  }
+  window.addEventListener('pointerdown', resumeIfNeeded, { capture: true, passive: true });
 }
 export function isUnlocked(): boolean { return unlocked && ctx?.state === 'running'; }
-
-const extOf = (key: string) => (key.startsWith('sfx_') ? 'ogg' : 'm4a');
 
 function load(key: string): Promise<AudioBuffer | null> {
   if (clips.has(key)) return Promise.resolve(clips.get(key)!);
@@ -57,7 +73,7 @@ function load(key: string): Promise<AudioBuffer | null> {
   if (!p) {
     p = (async () => {
       try {
-        const res = await fetch(`${import.meta.env.BASE_URL}audio/${key}.${extOf(key)}`);
+        const res = await fetch(`${import.meta.env.BASE_URL}audio/${key}.m4a`);
         if (!res.ok) throw new Error(String(res.status));
         const data = await res.arrayBuffer();
         const buf = await getCtx().decodeAudioData(data);
@@ -65,7 +81,6 @@ function load(key: string): Promise<AudioBuffer | null> {
         return buf;
       } catch {
         if (!missing.has(key)) { missing.add(key); console.warn('[audio] thiếu clip', key); }
-        clips.set(key, null);
         return null;
       } finally {
         loading.delete(key);
@@ -77,23 +92,60 @@ function load(key: string): Promise<AudioBuffer | null> {
 }
 
 export function preload(keys: string[]): Promise<unknown> {
-  return Promise.all([...new Set(keys)].map((k) => load(k)));
+  if (MUTE) return Promise.resolve();
+  return Promise.all([...new Set(keys)].filter((k) => !k.startsWith('sfx_')).map((k) => load(k)));
 }
-/** Có file audio cho key không (sau khi đã thử tải). */
-export async function hasClip(key: string): Promise<boolean> { return (await load(key)) !== null; }
 export function missingClips(): string[] { return [...missing]; }
+
+/** Hiệu ứng ngắn tổng hợp (không cần file): chạm, bong bóng, chuông thắng, "bụp" nhẹ khi sai, nảy (đếm), vút (bay đi). */
+const SFX: Record<string, [type: OscillatorType, notes: [f0: number, f1: number, at: number, dur: number][]]> = {
+  sfx_tap: ['sine', [[880, 520, 0, 0.07]]],
+  sfx_pop: ['sine', [[520, 1250, 0, 0.09]]],
+  sfx_win: ['triangle', [[1047, 1047, 0, 0.16], [1319, 1319, 0.09, 0.16], [1568, 1568, 0.18, 0.28]]],
+  sfx_soft: ['sine', [[330, 220, 0, 0.18]]],
+  sfx_hop: ['triangle', [[660, 990, 0, 0.08]]],
+  sfx_whoosh: ['sine', [[900, 300, 0, 0.35]]],
+};
+function synth(key: string, volume: number): void {
+  const def = SFX[key];
+  if (!def) return;
+  const c = getCtx();
+  if (c.state !== 'running') return;
+  const t0 = c.currentTime + 0.01;
+  for (const [f0, f1, at, dur] of def[1]) {
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = def[0];
+    o.frequency.setValueAtTime(f0, t0 + at);
+    o.frequency.exponentialRampToValueAtTime(f1, t0 + at + dur);
+    g.gain.setValueAtTime(0.0001, t0 + at);
+    g.gain.exponentialRampToValueAtTime(0.35 * volume, t0 + at + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + at + dur);
+    o.connect(g).connect(out());
+    o.start(t0 + at);
+    o.stop(t0 + at + dur + 0.02);
+  }
+}
 
 let current: AudioBufferSourceNode | null = null;
 let currentDone: (() => void) | null = null;
 let seqToken = 0;
+const LOAD_TIMEOUT = 6000;
 
-/** Phát 1 clip, resolve khi phát xong. Clip giọng mới cắt clip giọng đang phát (sfx thì chồng lên). */
+/** Phát 1 clip, resolve khi phát xong (hoặc hết hạn giờ). Clip giọng mới cắt clip giọng đang phát; sfx chồng lên. */
 export function play(key: string, opts: { volume?: number; cut?: boolean } = {}): Promise<void> {
-  return load(key).then((buf) => {
+  if (key.startsWith('sfx_')) { if (!MUTE) synth(key, opts.volume ?? 0.6); return Promise.resolve(); }
+  touch();
+  if (MUTE) {
+    voiceHook?.(key, 'start');
+    return new Promise((r) => setTimeout(() => { voiceHook?.(key, 'end'); touch(); r(); }, 150));
+  }
+  // lưới an toàn: tải / giải mã treo quá 6 s → coi như không có clip (game không đứng chờ mãi)
+  const loaded = Promise.race([load(key), new Promise<null>((r) => setTimeout(() => r(null), LOAD_TIMEOUT))]);
+  return loaded.then((buf) => {
     if (!buf) return;
     const c = getCtx();
-    const voice = !key.startsWith('sfx_');
-    if (voice && opts.cut !== false) stopVoice();
+    if (opts.cut !== false) stopVoice();
     const src = c.createBufferSource();
     src.buffer = buf;
     const gain = c.createGain();
@@ -106,12 +158,16 @@ export function play(key: string, opts: { volume?: number; cut?: boolean } = {})
         done = true;
         clearTimeout(timer);
         if (current === src) { current = null; currentDone = null; }
+        voiceHook?.(key, 'end');
+        touch();
         resolve();
       };
       // context bị treo (chưa chạm / iOS ngắt) thì onended không bao giờ tới → hẹn giờ dự phòng
-      const timer = window.setTimeout(finish, buf.duration * 1000 + 400);
+      const timer = window.setTimeout(finish, buf.duration * 1000 + 1500);
       src.onended = finish;
-      if (voice) { current = src; currentDone = finish; }
+      current = src; currentDone = finish;
+      voiceHook?.(key, 'start');
+      touch();
       try { src.start(0); } catch { finish(); }
     });
   });
@@ -138,7 +194,7 @@ export async function speakSequence(keys: string[], onToken?: (i: number) => voi
     onToken?.(i);
     await play(keys[i]);
     if (my !== seqToken) return false;
-    await new Promise((r) => setTimeout(r, gapMs));
+    if (gapMs > 0) await new Promise((r) => setTimeout(r, gapMs));
   }
   return my === seqToken;
 }
@@ -146,6 +202,11 @@ export async function speakSequence(keys: string[], onToken?: (i: number) => voi
 export function stopSpeech(): void {
   seqToken++;
   stopVoice();
+}
+
+/** Chờ p nhưng tối đa ms (mọi thứ được await trong luồng chơi đi qua đây → không bao giờ treo). */
+export function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | undefined> {
+  return Promise.race([p, new Promise<undefined>((r) => setTimeout(() => r(undefined), ms))]);
 }
 
 // ---------- hộp nhạc tổng hợp (không cần file) ----------
@@ -161,6 +222,7 @@ function freq(n: string): number {
 let musicGain: GainNode | null = null;
 /** Hộp nhạc: chuỗi "C5:1 E5:1 G5:2 -:1" (nốt:phách, "C5+E5" = hợp âm). Resolve khi hết bài. */
 export function musicBox(score: string, bpm = 132, volume = 0.22, loops = 1): Promise<void> {
+  if (MUTE) return Promise.resolve();
   const c = getCtx();
   if (c.state !== 'running') return Promise.resolve();
   stopMusic();
@@ -196,6 +258,7 @@ function bell(c: AudioContext, dest: AudioNode, f: number, t: number, dur: numbe
 }
 /** Chuông ngắn chồng lên nhạc nền (không cắt nhạc). */
 export function chime(score: string, bpm = 220, volume = 0.18): void {
+  if (MUTE) return;
   const c = getCtx();
   if (c.state !== 'running') return;
   const g = c.createGain();

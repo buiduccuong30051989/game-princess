@@ -1,5 +1,0 @@
-# Phòng Merida. key|text – giọng Linh macOS. Từ vựng (ask_/name_/token) KHÔNG viết ở đây: tự sinh từ src/rooms/merida.ts.
-merida_name|Rừng xanh của Merida!
-merida_intro|Đây là rừng xanh của công chúa Merida, có vòng đá cổ và những đốm sáng xanh kỳ diệu. Ôi, Merida bị đóng băng mất rồi! Hà An trả lời đúng ba câu để làm tan băng nhé!
-merida_thanks|Cảm ơn Nhím đã cứu tớ! Tớ là Merida. Mình cùng đi bắn cung và cưỡi ngựa nhé!
-merida_count|Có mấy chú gấu? Chạm từng chú để đếm nhé.
