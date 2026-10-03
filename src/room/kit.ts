@@ -446,9 +446,8 @@ export function candle(h = 0.3, color = 0xfff4e0): THREE.Group {
 export function flicker(obj: THREE.Object3D, t: number, seed = 0): void {
   const k = 1 + Math.sin(t * 13 + seed) * 0.08 + Math.sin(t * 29 + seed * 2) * 0.05;
   const f = obj.userData.flame as THREE.Object3D | undefined;
-  const h = obj.userData.halo as THREE.Object3D | undefined;
+  // quầng sáng đứng yên (iPad: quầng tĩnh gộp chung được → ít draw call); chỉ ngọn lửa nhấp nháy
   if (f) f.scale.set(k, 1.8 * k, k);
-  if (h) h.scale.setScalar(0.5 * k);
 }
 
 /** Đèn lồng giấy phát sáng (kiểu Tangled). Tâm ở gốc. */

@@ -4,6 +4,7 @@
 // Sảnh "sống": lúc rảnh Elsa tự lướt đi thăm bệ / ra trước vẫy bé / xoay tung tuyết; tuyết rơi lác đác;
 // khung ảnh "Gia đình Nhím" ở góc phải (chạm vào → người nhà cổ vũ). Dạ hội: cả nhà lần lượt cổ vũ.
 import * as THREE from 'three';
+import { PARAMS } from './core/params.ts';
 import type { Engine, GameScene } from './core/engine.ts';
 import { emojiTexture, disposeTree, prefetch, lodModel } from './core/assets.ts';
 import { type Progress, isUnlocked, isSaved, markBall, ROOM_ORDER, BALL_MILESTONES } from './core/progress.ts';
@@ -15,6 +16,7 @@ import { play, sfx, musicBox, stopMusic, chime, WALTZ, CHIME_BIG, stopSpeech } f
 import { els, showHud, setStars, confetti, showActions, banner } from './ui.ts';
 import { FAMILY, photoUrl, familyCheer, familyCheerAll, familyBusy, clearFamily } from './family.ts';
 import { tween, wait, easeOutBack, easeInOutSine } from './tween.ts';
+import { mergeStatic } from './core/merge.ts';
 import type { RoomDef, RoomId } from './room/types.ts';
 import {
   mat, glowMat, texMat, canvasTex, tileTex, wallpaperTex, floor, pillar, glow, mix, bunting, fairyLights, css,
@@ -126,6 +128,7 @@ export class HallScene implements GameScene {
     this.buildRoomShell();
     this.buildStage();
     ROOMS.forEach((def, i) => this.buildSlot(def, i));
+    this.optimizeStatic();
 
     this.elsa = new ElsaGuide(1.9);
     this.elsa.root.position.copy(this.elsaHome);
@@ -148,6 +151,23 @@ export class HallScene implements GameScene {
     await Promise.all(jobs);
     if (this.finaleDone && this.elsaF1) this.elsa.root.visible = false;
     prefetch([ELSA_MODEL]);
+  }
+
+  /**
+   * iPad (≤ 150 draw call): gộp đồ tĩnh của sảnh theo material (chậu hoa 50 quả cầu, đèn chùm, dây cờ, cột…), đồ trang trí
+   * không đổ bóng. Giữ riêng thứ có hoạt cảnh: đèn chùm (đung đưa: gộp bên trong nó), khung ảnh gia đình (nhún khi chạm),
+   * huy hiệu, vòng sáng, cánh cửa (đổi màu), vùng chạm.
+   */
+  private optimizeStatic(): void {
+    if (PARAMS.nomerge) return;
+    this.scene.traverse((o) => { o.castShadow = false; });
+    this.resize(1180 / 820);
+    const keep: THREE.Object3D[] = [this.chandelier];
+    if (this.familyFrame) keep.push(this.familyFrame);
+    const keepMats: THREE.Material[] = [];
+    for (const s of this.slots) { keep.push(s.badge, s.hit, s.ringGlow, s.doorPanel); keepMats.push(s.ringGlow.material as THREE.Material, s.doorPanel.material as THREE.Material); }
+    const st = mergeStatic(this.scene, { keep, keepMaterials: keepMats, camera: this.camera });
+    if (import.meta.env.DEV) console.info(`[hall] gộp đồ tĩnh: ${st.meshesBefore} → ${st.meshesAfter} vật vẽ (${st.sprites} sprite → tấm phẳng)`);
   }
 
   private buildLights(): void {
@@ -569,6 +589,8 @@ export class HallScene implements GameScene {
     s.loading = actor.load(!saved, 0).then(() => {
       if (!this.alive) { actor.dispose(); return; }
       actor.root.position.y = PED_H;
+      // tượng trên bệ không đổ bóng (11 tượng × pass bóng = gấp đôi tam giác; bóng rơi trên mặt bệ gần như không thấy)
+      actor.root.traverse((o) => { o.castShadow = false; });
       actor.idleLife = saved;
       s.base.add(actor.root);
       s.actor = actor;

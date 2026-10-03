@@ -405,14 +405,16 @@ async function buildScene(ctx: RoomCtx): Promise<void> {
     if (i < 8) { x = (i - 3.5) * 1.7 + (r() - 0.5) * 0.6; z = -3.5 - r() * 1.6; }
     padSpots.push([x, z, 0.35 + r() * 0.35, i % 3 === 0]);
   }
-  for (const [x, z, rad, fl] of padSpots) {
+  padSpots.forEach(([x, z, rad, fl], i) => {
     const p = lilyPad(rad, r() < 0.5 ? 0x3fbf4f : 0x62d35a, fl);
     p.position.set(x, -0.25, z);
     p.rotation.y = r() * 6;
     root.add(p);
-    pads.push({ obj: p, seed: r() * 10 });
+    // iPad: chỉ 8 lá gần bập bềnh; lá xa đứng yên để gộp chung 1 draw call (nhìn từ xa không thấy khác)
+    const seed = r() * 10;
+    if (i < 8) pads.push({ obj: p, seed });
     if (p.userData.flower) flowers.push(p.userData.flower as THREE.Object3D);
-  }
+  });
   const hoppers: Hopper[] = [];
   for (const [x, z, crown, rot] of [[-2.2, -4.0, true, 0.4], [2.6, -4.3, false, -0.4], [-4.3, -6.8, false, 0.6], [4.8, -7.6, false, -0.7], [0.6, -8.8, false, 0]] as const) {
     const pad = lilyPad(0.42, 0x4cc94f, false);

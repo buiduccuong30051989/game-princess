@@ -3,6 +3,7 @@
 // Elsa "sống": vào phòng vẫy chào, lúc chờ bé thì lướt nhẹ / ngắm tượng / quay ra vẫy; đúng → làm phép + vẫy;
 // sai → suy nghĩ / lo lắng. Thỉnh thoảng người nhà Nhím hiện bong bóng cổ vũ (src/family.ts).
 import * as THREE from 'three';
+import { PARAMS } from '../core/params.ts';
 import type { Engine, GameScene } from '../core/engine.ts';
 import { instance, emojiSprite, disposeTree, evictGLB } from '../core/assets.ts';
 import { PrincessActor } from '../princess.ts';
@@ -16,6 +17,7 @@ import { princessInfo } from '../rooms/princesses.ts';
 import { buildWord, validateRoom } from './words.ts';
 import { roomAudioKeys } from './audioKeys.ts';
 import { mat, mix } from './kit.ts';
+import { mergeStatic, collectRefs, noCastShadow, detectMoving, snapshotPlain } from '../core/merge.ts';
 import type { RoomCtx, RoomDef, RoomLayout } from './types.ts';
 
 export const ROOM_LAYOUT: RoomLayout = {
@@ -62,6 +64,7 @@ export class RoomScene implements GameScene {
   private key!: THREE.DirectionalLight;
   private fill!: THREE.DirectionalLight;
   private thinkCooldown = 0;
+  private pedestal!: THREE.Group;
   private wrongN = 0;
   // Elsa tự hoạt động lúc chờ bé (elsaHold > 0: đang làm phép / nghi lễ → đứng yên chờ lệnh)
   private elsaHold = 0;
@@ -129,6 +132,7 @@ export class RoomScene implements GameScene {
       this.princess.load(frozen, startMelt),
       this.elsa.load().catch((e) => console.error('[room] không tải được Elsa', e)),
     ]);
+    this.optimizeDecor();
     this.princess.idleLife = false;
     if (!frozen) { this.awake = true; this.melt = 1; this.princess.setAwake(); }
     else this.melt = startMelt / 3;
@@ -138,6 +142,44 @@ export class RoomScene implements GameScene {
     this.challenge = new Challenge(words, def.count, { onWrong: () => this.onWrong() });
 
     if (this.opts.debug) this.buildDebug();
+  }
+
+  /**
+   * iPad: đồ trang trí không đổ bóng (pass bóng nhân đôi draw call + tam giác; chỉ công chúa, Elsa, bệ đổ bóng)
+   * và đồ tĩnh gộp theo material (ambient chỉ đụng đồ trong ctx.state → giữ nguyên các thứ đó).
+   */
+  private optimizeDecor(): void {
+    if (PARAMS.nomerge) return;
+    noCastShadow(this.root);
+    this.resize(1180 / 820); // sprite → tấm phẳng cần hướng camera thật
+    const refs = collectRefs(this.ctxState);
+    // Đồ THỰC SỰ chuyển động: chạy ambient giả lập 30 s (băng tan dần rồi tỉnh dậy), xem object nào đổi vị trí/xoay/ẩn hiện,
+    // rồi trả mọi thứ (transform, material, số liệu trong ctx.state) về như cũ.
+    let moving: Set<THREE.Object3D>, animMats: Set<THREE.Material>;
+    const ambient = this.def.ambient;
+    const restoreState = snapshotPlain(this.ctxState);
+    try {
+      let t = 0, melt = 0, awake = false;
+      const sim = Object.create(this.ctx) as RoomCtx;
+      Object.defineProperties(sim, { melt: { get: () => melt }, awake: { get: () => awake }, time: { get: () => t } });
+      const dt = 1 / 30;
+      const res = ambient ? detectMoving(this.root, (i) => { t += dt; melt = Math.min(1, i / 300); awake = i >= 420; ambient.call(this.def, sim, dt); }, 900) : null;
+      moving = res?.objects ?? new Set();
+      animMats = res?.materials ?? new Set();
+    } catch (e) {
+      console.warn(`[room ${this.def.id}] giả lập ambient lỗi → chỉ gộp đồ không có trong ctx.state`, e);
+      moving = new Set(refs.objects);
+      animMats = refs.materials;
+    } finally {
+      restoreState();
+      this.engine.magic.clear();
+    }
+    // material ctx.state trỏ THẲNG tới (không qua object) thường để ambient đổi màu/độ sáng → giữ nguyên dù giả lập không thấy đổi
+    for (const m of refs.directMaterials) animMats.add(m);
+    const st = mergeStatic(this.root, { keep: moving, keepMaterials: animMats, camera: this.camera });
+    mergeStatic(this.pedestal, { camera: this.camera });
+    if (import.meta.env.DEV) (this as unknown as Record<string, unknown>).__moving = moving;
+    if (import.meta.env.DEV) console.info(`[room ${this.def.id}] gộp đồ tĩnh: ${st.meshesBefore} → ${st.meshesAfter} vật vẽ (${moving.size} object động, ${st.sprites} sprite → tấm phẳng)`);
   }
 
   private buildLights(): void {
@@ -177,12 +219,14 @@ export class RoomScene implements GameScene {
     const trim2 = trim.clone();
     trim2.scale.setScalar(1.15);
     trim2.position.y = h * 0.45;
-    for (const m of [base, top]) { m.castShadow = true; m.receiveShadow = true; }
+    // bệ thấp: chỉ nhận bóng (bóng của chính nó gần như không thấy; iPad đỡ 2 lượt vẽ)
+    for (const m of [base, top]) m.receiveShadow = true;
     g.add(base, top, trim, trim2);
     const badge = emojiSprite(this.def.emoji, 0.42);
     badge.position.set(0, h * 0.62, r * 1.05 + 0.05);
     g.add(badge);
     this.scene.add(g);
+    this.pedestal = g;
   }
 
   resize(aspect: number): void {
