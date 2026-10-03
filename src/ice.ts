@@ -89,7 +89,11 @@ function patch(src: THREE.Material, u: IceUniforms): THREE.Material {
   return m;
 }
 
-interface Shard { mesh: THREE.Mesh; v: THREE.Vector3; spin: THREE.Vector3; life: number; max: number }
+interface Shard { pos: THREE.Vector3; rot: THREE.Euler; size: number; v: THREE.Vector3; spin: THREE.Vector3; life: number; max: number }
+interface Crystal { pos: THREE.Vector3; q: THREE.Quaternion; base: THREE.Vector3 }
+const _m4 = new THREE.Matrix4();
+const _q = new THREE.Quaternion();
+const _s = new THREE.Vector3();
 
 const crystalMat = new THREE.MeshStandardMaterial({
   color: 0xbfeaff, emissive: 0x4fb4ff, emissiveIntensity: 0.55, roughness: 0.15, metalness: 0,
@@ -105,6 +109,11 @@ export class Ice {
   private readonly u: IceUniforms;
   private readonly swaps: { mesh: THREE.Mesh; orig: THREE.Material | THREE.Material[]; ice: THREE.Material | THREE.Material[] }[] = [];
   private shards: Shard[] = [];
+  /** iPad: 16 pha lê = 1 InstancedMesh (1 draw call thay vì 16) */
+  private crystalMesh!: THREE.InstancedMesh;
+  private crystalData: Crystal[] = [];
+  /** mảnh vỡ khi nổ băng: 1 InstancedMesh */
+  private shardMesh: THREE.InstancedMesh | null = null;
   private applied = false;
   private readonly h: number;
   private foot = 0.2;
@@ -144,15 +153,23 @@ export class Ice {
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + Math.random() * 0.3;
       const r = this.foot * (0.8 + Math.random() * 0.35);
-      const c = new THREE.Mesh(crystalGeo, crystalMat);
       const tall = h * (0.12 + Math.random() * 0.2);
-      c.scale.set(h * 0.045, tall, h * 0.045);
-      c.position.set(Math.cos(a) * r, tall * 0.35, Math.sin(a) * r);
-      c.rotation.set((Math.random() - 0.5) * 0.7, Math.random() * 3, (Math.random() - 0.5) * 0.7);
-      c.userData.base = c.scale.clone();
-      c.castShadow = false;
-      this.crystals.add(c);
+      this.crystalData.push({
+        pos: new THREE.Vector3(Math.cos(a) * r, tall * 0.35, Math.sin(a) * r),
+        q: new THREE.Quaternion().setFromEuler(new THREE.Euler((Math.random() - 0.5) * 0.7, Math.random() * 3, (Math.random() - 0.5) * 0.7)),
+        base: new THREE.Vector3(h * 0.045, tall, h * 0.045),
+      });
     }
+    this.crystalMesh = new THREE.InstancedMesh(crystalGeo, crystalMat, n);
+    this.crystalMesh.castShadow = false;
+    this.crystals.add(this.crystalMesh);
+    this.setCrystalScale(1);
+  }
+
+  private setCrystalScale(k: number): void {
+    this.crystalData.forEach((c, i) => this.crystalMesh.setMatrixAt(i, _m4.compose(c.pos, c.q, _s.copy(c.base).multiplyScalar(k))));
+    this.crystalMesh.instanceMatrix.needsUpdate = true;
+    this.crystalMesh.computeBoundingSphere();
   }
 
   private apply(on: boolean): void {
@@ -167,7 +184,7 @@ export class Ice {
     const m = this.level / 3;
     this.u.uLine.value = this.lineFor(m);
     this.u.uCrack.value = Math.min(1, this.level * 0.45);
-    this.crystals.children.forEach((c) => c.scale.copy(c.userData.base as THREE.Vector3).multiplyScalar(1 - m * 0.7));
+    this.setCrystalScale(1 - m * 0.7);
     if (this.level >= 3) this.remove();
   }
 
@@ -190,7 +207,7 @@ export class Ice {
     await tween(1100, (k) => {
       const m = from + (to - from) * k;
       this.u.uLine.value = this.lineFor(m);
-      this.crystals.children.forEach((c) => c.scale.copy(c.userData.base as THREE.Vector3).multiplyScalar(1 - m * 0.7));
+      this.setCrystalScale(1 - m * 0.7);
       if (magic && Math.random() < 0.6) {
         const p = this.space.localToWorld(new THREE.Vector3((Math.random() - 0.5) * this.h * 0.3, this.lineFor(m), (Math.random() - 0.5) * this.h * 0.2));
         magic.emit({ x: p.x, y: p.y, z: p.z, color: 0x7fd0ff, vy: -0.8, gravity: -3, max: 0.9, size: 0.35 });
@@ -206,20 +223,26 @@ export class Ice {
     // mảnh vỡ: pha lê dưới chân + mảnh quanh thân
     const parent = this.space.parent ?? this.space;
     const addShard = (pos: THREE.Vector3, size: number) => {
-      const mesh = new THREE.Mesh(shardGeo, crystalMat);
-      mesh.scale.setScalar(size);
-      mesh.position.copy(parent.worldToLocal(pos.clone()));
-      parent.add(mesh);
       const dir = pos.clone().sub(center).setY(0).normalize();
       const v = dir.multiplyScalar((1.2 + Math.random() * 2.2) * scale).add(new THREE.Vector3(0, (1.5 + Math.random() * 2.5) * scale, 0));
-      this.shards.push({ mesh, v, spin: new THREE.Vector3(Math.random() * 8, Math.random() * 8, Math.random() * 8), life: 0, max: 1.1 + Math.random() * 0.6 });
+      // vận tốc tính trong hệ thế giới; mảnh nằm trong hệ của parent (scale đồng đều) → đổi vận tốc sang hệ parent
+      const ps = parent.getWorldScale(new THREE.Vector3()).x || 1;
+      const pq = parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+      this.shards.push({
+        pos: parent.worldToLocal(pos.clone()), rot: new THREE.Euler(), size: size / ps, v: v.applyQuaternion(pq).divideScalar(ps),
+        spin: new THREE.Vector3(Math.random() * 8, Math.random() * 8, Math.random() * 8), life: 0, max: 1.1 + Math.random() * 0.6,
+      });
     };
-    for (const c of this.crystals.children) addShard(c.getWorldPosition(new THREE.Vector3()), this.h * 0.05 * scale);
+    this.crystals.updateMatrixWorld(true);
+    for (const c of this.crystalData) addShard(this.crystals.localToWorld(c.pos.clone()), this.h * 0.05 * scale);
     for (let i = 0; i < 46; i++) {
       const a = Math.random() * Math.PI * 2, y = Math.random() * this.h;
       const r = this.h * (0.12 + Math.random() * 0.12) * (1 - y / this.h * 0.4);
       addShard(this.space.localToWorld(new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r)), this.h * (0.018 + Math.random() * 0.03) * scale);
     }
+    this.shardMesh = new THREE.InstancedMesh(shardGeo, crystalMat, this.shards.length);
+    this.shardMesh.frustumCulled = false;
+    parent.add(this.shardMesh);
     this.crystals.visible = false;
     if (magic) {
       magic.burst(center, 200, 0x3fa9f5, 3.4 * scale, 0.6, 1.8, -1.6, 0.6 * scale);
@@ -247,15 +270,22 @@ export class Ice {
       this.space.updateWorldMatrix(true, false);
       this.u.uSpaceInv.value.copy(this.space.matrixWorld).invert();
     }
-    for (let i = this.shards.length - 1; i >= 0; i--) {
-      const s = this.shards[i];
-      s.life += dt;
-      s.v.y -= 7 * dt;
-      s.mesh.position.addScaledVector(s.v, dt);
-      s.mesh.rotation.x += s.spin.x * dt; s.mesh.rotation.y += s.spin.y * dt; s.mesh.rotation.z += s.spin.z * dt;
-      const k = s.life / s.max;
-      s.mesh.scale.multiplyScalar(k > 0.6 ? 0.93 : 1);
-      if (k >= 1) { s.mesh.removeFromParent(); this.shards.splice(i, 1); }
+    const sm = this.shardMesh;
+    if (sm) {
+      let alive = 0;
+      this.shards.forEach((s, i) => {
+        s.life += dt;
+        const k = s.life / s.max;
+        if (k >= 1) { sm.setMatrixAt(i, _m4.makeScale(0, 0, 0)); return; }
+        alive++;
+        s.v.y -= 7 * dt;
+        s.pos.addScaledVector(s.v, dt);
+        s.rot.x += s.spin.x * dt; s.rot.y += s.spin.y * dt; s.rot.z += s.spin.z * dt;
+        if (k > 0.6) s.size *= 0.93;
+        sm.setMatrixAt(i, _m4.compose(s.pos, _q.setFromEuler(s.rot), _s.setScalar(s.size)));
+      });
+      sm.instanceMatrix.needsUpdate = true;
+      if (!alive) { sm.removeFromParent(); sm.dispose(); this.shardMesh = null; this.shards = []; }
     }
   }
 
@@ -264,8 +294,11 @@ export class Ice {
       const mats = Array.isArray(s.ice) ? s.ice : [s.ice];
       mats.forEach((m) => m.dispose());
     }
-    for (const s of this.shards) s.mesh.removeFromParent();
+    this.shardMesh?.removeFromParent();
+    this.shardMesh?.dispose();
+    this.shardMesh = null;
     this.shards = [];
+    this.crystalMesh.dispose();
     this.crystals.removeFromParent();
   }
 }
