@@ -96,6 +96,8 @@ boot();
 if (import.meta.env.DEV) {
   (window as unknown as Record<string, unknown>).__game = {
     engine, progress, goHall, goRoom, ROOMS,
+    /** ép bài toán kế tiếp (n % 2: cộng/trừ, n % 3 == 2 ở 3 phòng cuối: thiếu số) */
+    seedMath: seedMathCounter,
     get scene() { return engine.current; },
     get renderer() { return engine.renderer; },
     /** chụp khung hình hiện tại (kể cả hạt phép) thành dataURL */
