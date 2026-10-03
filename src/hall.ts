@@ -739,6 +739,16 @@ export class HallScene implements GameScene {
   onTap(ndc: THREE.Vector2): void {
     this.kickIdle();
     if (this.busy || this.opening || !this.alive) return;
+    // huy hiệu trên đầu tượng thắng trước: chạm trong bán kính ~55 px quanh tâm huy hiệu (vùng chạm ≥ 110 px dù huy hiệu vẽ nhỏ hơn),
+    // nếu không bệ phía trước (vùng chạm hình trụ to) sẽ "nuốt" chạm vào huy hiệu bệ phía sau
+    const px = new THREE.Vector2((ndc.x + 1) / 2 * innerWidth, (1 - ndc.y) / 2 * innerHeight);
+    let best: Slot | null = null, bestD = 55;
+    for (const s of this.slots) {
+      const v = s.badge.getWorldPosition(this._v).project(this.camera);
+      const d = Math.hypot((v.x + 1) / 2 * innerWidth - px.x, (1 - v.y) / 2 * innerHeight - px.y);
+      if (d < bestD) { bestD = d; best = s; }
+    }
+    if (best) { this.stopLife(); void this.tapSlot(best); return; }
     this.raycaster.setFromCamera(ndc, this.camera);
     const targets: THREE.Object3D[] = [this.elsaHit];
     for (const s of this.slots) targets.push(s.hit, s.badge);
