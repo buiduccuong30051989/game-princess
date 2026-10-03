@@ -858,8 +858,7 @@ const room: RoomDef = {
     { word: 'nơ', emoji: '🎀', name: 'cái nơ', fill: { index: 0, distractors: ['p', 'g'] } },
     { word: 'bánh', emoji: '🍪', name: 'cái bánh' },
   ],
-  count: { emoji: '⛄', audio: 'anna_count', range: [3, 7] },
-  challenges: ['spell', 'fill', 'count'],
+  challenges: ['spell', 'fill', 'math'],
   magicColors: [0xc026d3, 0x0a84ff],
   audio: { name: 'anna_name', intro: 'anna_intro', thanks: 'anna_thanks' },
 };

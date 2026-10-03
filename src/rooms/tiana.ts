@@ -830,8 +830,7 @@ const room: RoomDef = {
     { word: 'thìa', emoji: '🥄', name: 'cái thìa' },
     { word: 'tôm', emoji: '🦐', name: 'con tôm', fill: { index: 0, distractors: ['c', 'l'] } },
   ],
-  count: { emoji: '🐸', audio: 'tiana_count', range: [3, 7] },
-  challenges: ['spell', 'fill', 'count'],
+  challenges: ['spell', 'fill', 'math'],
   magicColors: [0x15803d, 0xd97706],
   audio: { name: 'tiana_name', intro: 'tiana_intro', thanks: 'tiana_thanks' },
 };

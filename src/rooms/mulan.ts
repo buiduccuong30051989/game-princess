@@ -1265,8 +1265,7 @@ const room: RoomDef = {
     { word: 'ngựa', emoji: '🐎', name: 'con ngựa' },
     { word: 'trống', emoji: '🥁', name: 'cái trống' },
   ],
-  count: { emoji: '🌸', audio: 'mulan_count', range: [3, 7] },
-  challenges: ['spell', 'fill', 'count'],
+  challenges: ['spell', 'fill', 'math'],
   magicColors: [0xdc2626, 0xf59e0b],
   audio: { name: 'mulan_name', intro: 'mulan_intro', thanks: 'mulan_thanks' },
 };

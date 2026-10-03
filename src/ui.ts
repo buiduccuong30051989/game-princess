@@ -1,4 +1,5 @@
-// UI DOM: HUD, bảng thử thách, nút lớn, băng rôn tên phòng, pháo giấy, lớp băng mép màn.
+// UI DOM: HUD, bảng thử thách, nút lớn, băng rôn tên phòng, pháo giấy, lớp băng mép màn, hàng phép tính toán.
+// Mọi nút dùng onTap (pointer events, không phụ thuộc hover / click trễ của iPad).
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
 
 export const els = {
@@ -14,8 +15,8 @@ export const els = {
   repeat: $<HTMLButtonElement>('#repeat'),
   word: $('#word'),
   wordEmoji: $('#word-emoji'),
-  counter: $('#counter'),
-  gemrow: $('#gemrow'),
+  math: $('#math'),
+  mathEq: $('#math-eq'),
   options: $('#options'),
   actions: $('#actions'),
   btnHall: $<HTMLButtonElement>('#btn-hall'),
@@ -25,6 +26,27 @@ export const els = {
   fade: $('#fade'),
   debug: $('#debug'),
 };
+
+/**
+ * Chạm (pointer events): kích hoạt khi NHẤC ngón tay trên chính phần tử (ngón trượt ra ngoài thì thôi).
+ * Không dùng 'click' (iPad có thể trễ / nuốt khi đang cuộn) và không có gì phụ thuộc hover. Trả hàm gỡ.
+ */
+export function onTap(el: HTMLElement, fn: (e: PointerEvent) => void): () => void {
+  let downId: number | null = null;
+  const down = (e: PointerEvent) => { if (e.isPrimary !== false) downId = e.pointerId; };
+  const up = (e: PointerEvent) => {
+    if (downId !== e.pointerId) return;
+    downId = null;
+    const r = el.getBoundingClientRect();
+    if (e.clientX < r.left - 8 || e.clientX > r.right + 8 || e.clientY < r.top - 8 || e.clientY > r.bottom + 8) return;
+    fn(e);
+  };
+  const cancel = () => { downId = null; };
+  el.addEventListener('pointerdown', down);
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', cancel);
+  return () => { el.removeEventListener('pointerdown', down); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', cancel); };
+}
 
 export function setStars(n: number, total: number, bump = false): void {
   els.stars.textContent = `⭐ ${n}/${total}`;
@@ -52,10 +74,8 @@ export function showPanel(v: boolean): void {
   els.panel.hidden = !v;
   if (!v) {
     hideWord();
-    setCounter(null);
     clearOptions();
-    els.gemrow.hidden = true;
-    els.gemrow.innerHTML = '';
+    hideMath();
     els.wordEmoji.hidden = true;
   }
 }
@@ -75,41 +95,106 @@ export function showWord(word: string, lit: number[] = [], whole = false, blank 
 }
 export function hideWord(): void { els.word.hidden = true; els.word.classList.remove('whole'); }
 
-export function setCounter(n: number | null): void {
-  if (n === null) { els.counter.hidden = true; return; }
-  els.counter.hidden = false;
-  els.counter.textContent = String(n);
-  els.counter.classList.remove('bump');
-  void els.counter.offsetWidth;
-  els.counter.classList.add('bump');
-}
-
 export interface Option { label: string; value: string }
-export function showOptions(items: Option[], onPick: (value: string, btn: HTMLButtonElement) => void): HTMLButtonElement[] {
+let optUnbind: (() => void)[] = [];
+export function showOptions(items: Option[], onPick: (value: string, btn: HTMLButtonElement) => void, cls = ''): HTMLButtonElement[] {
   clearOptions();
   return items.map((it) => {
     const b = document.createElement('button');
-    b.className = 'opt';
+    b.className = `opt ${cls}`.trim();
     b.textContent = it.label;
     b.dataset.value = it.value;
-    b.addEventListener('click', () => onPick(it.value, b));
+    optUnbind.push(onTap(b, () => onPick(it.value, b)));
     els.options.appendChild(b);
     return b;
   });
 }
-export function clearOptions(): void { els.options.innerHTML = ''; }
+export function clearOptions(): void { optUnbind.forEach((f) => f()); optUnbind = []; els.options.innerHTML = ''; }
 
-export function showGemRow(n: number, emoji: string, onTap: (btn: HTMLButtonElement, index: number) => void): void {
-  els.gemrow.innerHTML = '';
-  els.gemrow.hidden = false;
-  for (let i = 0; i < n; i++) {
-    const b = document.createElement('button');
-    b.className = 'gem';
-    b.textContent = emoji;
-    b.addEventListener('click', () => onTap(b, i));
-    els.gemrow.appendChild(b);
-  }
+// ------------------------------------------------------------------ hàng phép tính (toán)
+export interface MathView {
+  /** vật chạy "đếm cùng" khi bé chọn sai (theo thứ tự đếm 1..N) */
+  countItems: HTMLElement[];
+  /** ô "?" trong phép tính */
+  q: HTMLElement;
 }
+
+function item(emoji: string, cls = ''): HTMLElement {
+  const s = document.createElement('span');
+  s.className = `mitem ${cls}`.trim();
+  s.textContent = emoji;
+  return s;
+}
+function group(children: HTMLElement[], cls = ''): HTMLElement {
+  const g = document.createElement('div');
+  g.className = `mgroup ${cls}`.trim();
+  g.append(...children);
+  return g;
+}
+function op(t: string): HTMLElement { const o = document.createElement('span'); o.className = 'mop'; o.textContent = t; return o; }
+
+/**
+ * Dựng phép tính bằng đồ vật + chữ số:
+ *   cộng  🔷🔷🔷 + 🔷🔷 = ?      (dòng dưới: 3 + 2 = ?)
+ *   trừ   🔷🔷🔷🔷🔷 🔷̶🔷̶       (2 vật cuối bay đi / gạch chéo; dòng dưới: 7 − 2 = ?)
+ *   thiếu 🔷🔷🔷 + ❓ = 🔷🔷🔷🔷🔷  (dòng dưới: 3 + ? = 5; sai thì hiện 2 vật mờ còn thiếu và đếm)
+ */
+export function showMath(p: { op: 'add' | 'sub' | 'miss'; a: number; b: number; c: number }, emoji: string, away: string): MathView {
+  const m = els.math;
+  m.innerHTML = '';
+  m.hidden = false;
+  const objs = document.createElement('div');
+  objs.className = 'mobjs';
+  const eq = els.mathEq;
+  eq.innerHTML = '';
+  eq.hidden = false;
+  const q = document.createElement('span');
+  q.className = 'mq';
+  q.textContent = '?';
+  const num = (n: number | string) => { const s = document.createElement('span'); s.className = 'mnum'; s.textContent = String(n); return s; };
+  let countItems: HTMLElement[] = [];
+  if (p.op === 'add') {
+    const A = Array.from({ length: p.a }, () => item(emoji));
+    const B = Array.from({ length: p.b }, () => item(emoji, 'new'));
+    objs.append(group(A), op('+'), group(B, 'gb'));
+    eq.append(num(p.a), op('+'), num(p.b), op('='), q);
+    countItems = [...A, ...B];
+  } else if (p.op === 'sub') {
+    const keep = Array.from({ length: p.c }, () => item(emoji));
+    const gone = Array.from({ length: p.b }, () => item(emoji, `gone away-${away}`));
+    objs.append(group([...keep, ...gone]));
+    eq.append(num(p.a), op('−'), num(p.b), op('='), q);
+    countItems = keep;
+  } else {
+    const A = Array.from({ length: p.a }, () => item(emoji));
+    const ghosts = Array.from({ length: p.b }, () => item(emoji, 'ghost'));
+    const C = Array.from({ length: p.c }, () => item(emoji, 'small'));
+    const bag = document.createElement('span');
+    bag.className = 'mitem bag';
+    bag.textContent = '❓';
+    objs.append(group(A), op('+'), group([bag, ...ghosts], 'gb'), op('='), group(C, 'gc'));
+    eq.append(num(p.a), op('+'), q, op('='), num(p.c));
+    countItems = ghosts;
+  }
+  m.append(objs);
+  return { countItems, q };
+}
+/** Trừ: các vật bị bớt bay / rơi / tan đi (gọi sau khi đọc tới câu "… mất rồi"). */
+export function mathTakeAway(): void { els.math.querySelectorAll('.mitem.gone').forEach((e) => e.classList.add('went')); }
+/** Thiếu số: hiện các vật mờ còn thiếu (lúc đếm cùng). */
+export function mathShowGhosts(): void {
+  els.math.querySelector('.bag')?.classList.add('open');
+  els.math.querySelectorAll('.mitem.ghost').forEach((e) => e.classList.add('shown'));
+}
+/** 1 vật nảy lên + số đếm trên đầu. */
+export function hopItem(el: HTMLElement, n: number): void {
+  el.dataset.n = String(n);
+  el.classList.remove('hop');
+  void el.offsetWidth;
+  el.classList.add('hop', 'counted');
+}
+export function clearCounted(): void { els.math.querySelectorAll('.mitem.counted').forEach((e) => { e.classList.remove('counted', 'hop'); delete (e as HTMLElement).dataset.n; }); }
+export function hideMath(): void { els.math.hidden = true; els.math.innerHTML = ''; els.mathEq.hidden = true; els.mathEq.innerHTML = ''; }
 
 export function wobbleEl(el: HTMLElement): void {
   el.classList.remove('wobble');

@@ -1,24 +1,29 @@
-// Danh sách audio key: dùng chung (scripts/audio-manifest.txt) + riêng từng phòng (scripts/audio/<id>.txt + từ vựng tự sinh).
+// Danh sách audio key để tải trước: dùng chung (src/lines.ts: câu đơn + ngân hàng câu + câu toán chung + số) và riêng 1 phòng
+// (từ vựng + token đánh vần + câu phòng + câu toán theo chủ đề). Mọi câu sinh bằng `pnpm audio` (scripts/audio-lines.mjs).
 import type { RoomDef } from './types.ts';
 import { wordAudioLines } from './words.ts';
+import { LINES, BANK_TEXT, bankKey, roomKey } from '../lines.ts';
+import { MATH_COMMON, MATH_THEMES, numKey, themeKey } from '../math.ts';
 
-export const NUMBER_KEYS = ['n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'n10'];
+export const NUMBER_KEYS = Array.from({ length: 10 }, (_, i) => numKey(i + 1));
 
-/** Câu dùng chung mọi phòng / sảnh (định nghĩa trong scripts/audio-manifest.txt). */
+/** Câu dùng chung mọi phòng / sảnh. */
 export const COMMON_KEYS = [
-  'hall_intro_first', 'hall_hello', 'hall_intro', 'elsa_tap_1', 'elsa_tap_2', 'elsa_tap_3', 'family_wall', 'hall_locked', 'hall_welcome_back', 'hall_new_door', 'hall_saved_tap',
-  'ball_3', 'ball_6', 'ball_9', 'ball_final', 'ball_end',
-  'challenge_start', 'challenge_start_replay', 'challenge_next', 'challenge_last',
-  'right', 'good', 'yay', 'great', 'retry', 'hint_last', 'ask_fill', 'ask_pick_number',
-  'melt_1', 'melt_2', 'wake', 'replay_intro', 'replay_done', 'tap_home',
-  'sfx_tap', 'sfx_pop', 'sfx_win', 'sfx_soft',
+  ...Object.keys(LINES),
+  ...Object.entries(BANK_TEXT).flatMap(([b, [, list]]) => list.map((_, i) => bankKey(b, i))),
+  ...Object.keys(MATH_COMMON),
   ...NUMBER_KEYS,
 ];
+
+const THEME_PARTS = ['has', 'noun', 'addPre', 'addEnd', 'subEnd', 'qAdd', 'qSub', 'qMiss'] as const;
+/** Câu của 1 chủ đề toán. */
+export function themeKeys(theme: string): string[] { return THEME_PARTS.map((p) => themeKey(theme, p)); }
 
 /** Mọi key 1 phòng cần (ngoài COMMON_KEYS). */
 export function roomAudioKeys(def: RoomDef): string[] {
   return [...new Set([
     ...wordAudioLines(def.words).map(([k]) => k),
-    def.audio.name, def.audio.intro, def.audio.thanks, def.count.audio,
+    roomKey(def.id, 'name'), roomKey(def.id, 'intro'), roomKey(def.id, 'thanks'),
+    ...(def.id in MATH_THEMES ? themeKeys(def.id) : []), ...themeKeys('snow'), ...themeKeys('gem'),
   ])];
 }

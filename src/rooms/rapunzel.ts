@@ -301,8 +301,7 @@ const room: RoomDef = {
     { word: 'sách', emoji: '📖', name: 'quyển sách' },
     { word: 'trăng', emoji: '🌙', name: 'mặt trăng' },
   ],
-  count: { emoji: '🏮', audio: 'rapunzel_count', range: [3, 7] },
-  challenges: ['spell', 'fill', 'count'],
+  challenges: ['spell', 'fill', 'math'],
   magicColors: [0xf08c00, 0x8b3fd9],
   audio: { name: 'rapunzel_name', intro: 'rapunzel_intro', thanks: 'rapunzel_thanks' },
 };

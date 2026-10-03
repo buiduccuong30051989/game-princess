@@ -1068,8 +1068,7 @@ const room: RoomDef = {
     { word: 'nho', emoji: '🍇', name: 'chùm nho', ask: 'Chùm nào là chùm nho?' },
     { word: 'voi', emoji: '🐘', name: 'con voi', fill: { index: 0, distractors: ['p', 'g'] } },
   ],
-  count: { emoji: '🪔', audio: 'jasmine_count', range: [3, 7] },
-  challenges: ['fill', 'spell', 'count'],
+  challenges: ['fill', 'spell', 'math'],
   magicColors: [0x0fa89a, 0xa21caf],
   audio: { name: 'jasmine_name', intro: 'jasmine_intro', thanks: 'jasmine_thanks' },
 };

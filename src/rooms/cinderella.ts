@@ -1018,8 +1018,7 @@ const room: RoomDef = {
     { word: 'ngựa', emoji: '🐴', name: 'con ngựa' },
     { word: 'chim', emoji: '🐦', name: 'con chim' },
   ],
-  count: { emoji: '🎃', audio: 'cinderella_count', range: [3, 7] },
-  challenges: ['spell', 'count', 'fill'],
+  challenges: ['spell', 'math', 'fill'],
   magicColors: [0x2f6bff, 0xe0338a],
   audio: { name: 'cinderella_name', intro: 'cinderella_intro', thanks: 'cinderella_thanks' },
 };

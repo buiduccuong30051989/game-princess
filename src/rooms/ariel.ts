@@ -888,8 +888,7 @@ const room: RoomDef = {
     { word: 'mực', emoji: '🦑', name: 'con mực' },
     { word: 'ngọc', emoji: '💎', name: 'viên ngọc' },
   ],
-  count: { emoji: '🐠', audio: 'ariel_count', range: [3, 7] },
-  challenges: ['spell', 'fill', 'count'],
+  challenges: ['spell', 'fill', 'math'],
   magicColors: [0x0096c7, 0xff3d8b],
   audio: { name: 'ariel_name', intro: 'ariel_intro', thanks: 'ariel_thanks' },
 };

@@ -1178,8 +1178,7 @@ const room: RoomDef = {
     { word: 'thỏ', emoji: '🐇', name: 'con thỏ' },
     { word: 'chim', emoji: '🐦', name: 'con chim' },
   ],
-  count: { emoji: '🦋', audio: 'aurora_count', range: [3, 7] },
-  challenges: ['spell', 'fill', 'count'],
+  challenges: ['spell', 'fill', 'math'],
   magicColors: [0xdb2777, 0x2563eb],
   audio: { name: 'aurora_name', intro: 'aurora_intro', thanks: 'aurora_thanks' },
 };

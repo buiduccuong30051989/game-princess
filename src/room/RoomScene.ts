@@ -9,8 +9,11 @@ import { instance, emojiSprite, disposeTree, evictGLB } from '../core/assets.ts'
 import { PrincessActor } from '../princess.ts';
 import { ElsaGuide } from '../elsa.ts';
 import { Challenge } from '../challenge.ts';
-import { play, sfx, chime, CHIME, CHIME_BIG, stopSpeech } from '../audio.ts';
-import { els, showHud, banner, setFrost, showActions, confetti, toast } from '../ui.ts';
+import { play, sfx, chime, CHIME, CHIME_BIG, stopSpeech, withTimeout } from '../audio.ts';
+import { els, showHud, banner, setFrost, showActions, confetti, toast, onTap } from '../ui.ts';
+import { bankKeyPick } from '../voice.ts';
+import { clearTalk } from '../talk.ts';
+import { ROOM_ORDER } from '../core/progress.ts';
 import { tween, wait, easeInOutSine } from '../tween.ts';
 import { familyCheer, clearFamily } from '../family.ts';
 import { princessInfo } from '../rooms/princesses.ts';
@@ -45,6 +48,7 @@ export interface RoomOpts {
 }
 
 export class RoomScene implements GameScene {
+  readonly kind = 'room';
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(34, 1, 0.1, 200);
   readonly root = new THREE.Group();
@@ -75,10 +79,9 @@ export class RoomScene implements GameScene {
   private flowRunning = false;
   private lastLine: string | null = null;
   private savedReported = false;
-  private readonly onHome = () => this.exit();
-  private readonly onHall = () => this.exit();
-  private readonly onAgain = () => void this.replay();
-  private readonly onSay = () => { if (!this.challenge?.repeat() && this.lastLine) void play(this.lastLine); };
+  private unbind: (() => void)[] = [];
+  /** giây không có gì xảy ra (watchdog phòng) */
+  private stuckT = 0;
 
   private constructor(engine: Engine, def: RoomDef, opts: RoomOpts) {
     this.engine = engine;
@@ -139,7 +142,7 @@ export class RoomScene implements GameScene {
     this.applyMeltLook();
 
     const words = def.words.map(buildWord);
-    this.challenge = new Challenge(words, def.count, { onWrong: () => this.onWrong() });
+    this.challenge = new Challenge(words, { roomIndex: Math.max(0, ROOM_ORDER.indexOf(def.id)), theme: def.id }, { onWrong: () => this.onWrong() });
 
     if (this.opts.debug) this.buildDebug();
   }
@@ -242,10 +245,12 @@ export class RoomScene implements GameScene {
   enter(): void {
     showHud(true);
     showActions(false, false);
-    els.home.addEventListener('click', this.onHome);
-    els.btnHall.addEventListener('click', this.onHall);
-    els.btnAgain.addEventListener('click', this.onAgain);
-    els.say.addEventListener('click', this.onSay);
+    this.unbind.push(
+      onTap(els.home, () => this.exit()),
+      onTap(els.btnHall, () => this.exit()),
+      onTap(els.btnAgain, () => void this.replay()),
+      onTap(els.say, () => { if (!this.challenge?.repeat() && this.lastLine) void play(this.lastLine); }),
+    );
     banner(`${this.def.emoji} ${this.def.name}`);
     void this.intro();
   }
@@ -255,14 +260,16 @@ export class RoomScene implements GameScene {
     this.lastLine = key;
     await play(key);
   }
+  /** 1 câu trong ngân hàng (không lặp câu vừa nói). */
+  private bank(name: string): Promise<void> { return this.line(bankKeyPick(name)); }
 
   /** Elsa quay ra vẫy chào bé khi vào phòng. */
   private async greet(): Promise<void> {
     const release = this.holdElsa();
     try {
-      await this.elsa.face(this.camera.position, 350);
+      await withTimeout(this.elsa.face(this.camera.position, 350), 2000);
       if (!this.alive) return;
-      await this.elsa.wave(2.2);
+      await withTimeout(this.elsa.wave(2.2), 5000);
     } finally { release(); }
   }
 
@@ -272,7 +279,7 @@ export class RoomScene implements GameScene {
       void this.greet();
       if (this.awake) {
         void this.princess.wave(2);
-        await this.line('replay_intro');
+        await this.bank('replay_intro');
         if (!this.alive) return;
         this.princess.idleLife = true;
         showActions(true, true);
@@ -289,7 +296,7 @@ export class RoomScene implements GameScene {
   private async runChallenges(): Promise<void> {
     const start = this.princess.ice ? this.princess.ice.level : 0;
     for (let i = start; i < 3; i++) {
-      const intro = i === 0 ? 'challenge_start' : i === 2 ? 'challenge_last' : 'challenge_next';
+      const intro = bankKeyPick(i === 0 ? 'start' : i === 2 ? 'last' : 'next');
       const ok = await this.challenge.run(this.def.challenges[i], intro);
       if (!ok || !this.alive) return;
       if (i === 2) {
@@ -317,29 +324,28 @@ export class RoomScene implements GameScene {
 
   private async celebrateCorrectInner(i: number): Promise<void> {
     const [c1, c2] = this.def.magicColors;
-    const praise = ['good', 'yay', 'great'][i % 3];
-    void this.line(praise);
-    await this.elsa.face(this.princess.chestWorld(), 350);
-    const spell = this.elsa.play('spell');
+    void this.bank('praise');
+    await withTimeout(this.elsa.face(this.princess.chestWorld(), 350), 2000);
+    const spell = withTimeout(this.elsa.play('spell'), 6000);
     await wait(700);
     if (!this.alive) return;
     sfx('sfx_win', 0.35);
-    await this.engine.magic.beam(this.elsa.handWorld(), this.princess.chestWorld(), c1, c2, 0.8, 1.4, 1.1);
+    await withTimeout(this.engine.magic.beam(this.elsa.handWorld(), this.princess.chestWorld(), c1, c2, 0.8, 1.4, 1.1), 4000);
     if (!this.alive) return;
     chime(i < 2 ? CHIME : CHIME_BIG);
     if (i < 2) {
       const m0 = this.melt;
       void tween(1300, (k) => { this.melt = m0 + (1 / 3) * k; this.applyMeltLook(); }, easeInOutSine);
-      await this.princess.ice?.meltStep(this.engine.magic, [c1, 0x7fd0ff]);
+      await withTimeout(this.princess.ice?.meltStep(this.engine.magic, [c1, 0x7fd0ff]) ?? Promise.resolve(), 4000);
       if (!this.alive) return;
       // chờ câu "băng tan" đọc HẾT (câu hỏi kế tiếp sẽ cắt tiếng đang phát)
-      await Promise.all([this.line(i === 0 ? 'melt_1' : 'melt_2'), spell]);
+      await Promise.all([this.bank('melt'), spell]);
       if (!this.alive) return;
     }
     await spell;
     if (!this.alive) return;
     // phép xong: quay ra vẫy bé
-    await this.elsa.face(this.camera.position, 350);
+    await withTimeout(this.elsa.face(this.camera.position, 350), 2000);
     void this.elsa.wave(1.4);
     // thỉnh thoảng người nhà cổ vũ (câu 3 thì để lúc công chúa tỉnh)
     if (i < 2 && Math.random() < 0.55) await this.cheer();
@@ -347,13 +353,25 @@ export class RoomScene implements GameScene {
 
   private async cheer(): Promise<void> {
     if (!this.alive) return;
-    await familyCheer();
+    await withTimeout(familyCheer(), 8000);
   }
 
   /** Câu 3 đúng: băng vỡ, công chúa tỉnh, nhún chào, vẫy, cảm ơn. */
   private async wakeUp(): Promise<void> {
     const release = this.holdElsa();
-    try { await this.wakeUpInner(); } finally { release(); }
+    try { await this.wakeUpInner(); } finally {
+      release();
+      // lỗi giữa chừng cũng không được để bé kẹt không có nút về sảnh
+      if (this.alive) els.home.style.visibility = 'visible';
+    }
+  }
+
+  /** Watchdog phòng gọi khi không còn gì chạy: chạy lại các bài còn lại (băng chưa tan hết) hoặc hiện nút cuối phòng. */
+  private async restartFlow(): Promise<void> {
+    if (this.flowRunning || !this.alive) return;
+    if (this.awake) { els.home.style.visibility = 'visible'; this.princess.idleLife = true; showActions(true, true); return; }
+    this.flowRunning = true;
+    try { await this.runChallenges(); } finally { this.flowRunning = false; }
   }
 
   private async wakeUpInner(): Promise<void> {
@@ -368,12 +386,12 @@ export class RoomScene implements GameScene {
     await wait(500);
     confetti(90);
     void this.elsa.play('celebrate');
-    await wake;
+    await withTimeout(wake, 8000);
     if (!this.alive) return;
-    await this.line('wake');
+    await this.bank('wake');
     if (!this.alive) return;
     const thanks = this.line(this.def.audio.thanks);
-    await this.princess.curtsy();
+    await withTimeout(this.princess.curtsy(), 6000);
     if (!this.alive) return;
     void this.princess.wave(2.2);
     await thanks;
@@ -386,7 +404,7 @@ export class RoomScene implements GameScene {
     this.princess.idleLife = true;
     els.home.style.visibility = 'visible';
     showActions(true, true);
-    void this.line('tap_home');
+    void this.bank('tap_home');
   }
 
   /** Chơi lại khi công chúa đã tỉnh: 3 bài, mỗi câu đúng tung phép quanh công chúa, cuối cùng xoay váy. */
@@ -395,36 +413,36 @@ export class RoomScene implements GameScene {
     this.flowRunning = true;
     showActions(false, false);
     this.princess.idleLife = false;
-    await this.princess.settle();
     try {
+      await withTimeout(this.princess.settle(), 4000);
       for (let i = 0; i < 3; i++) {
-        const intro = i === 0 ? 'challenge_start_replay' : i === 2 ? 'challenge_last' : 'challenge_next';
+        const intro = bankKeyPick(i === 0 ? 'replay_start' : i === 2 ? 'last' : 'next');
         const ok = await this.challenge.run(this.def.challenges[i], intro);
         if (!ok || !this.alive) return;
-        void this.line(['good', 'yay', 'great'][i]);
+        void this.bank('praise');
         const release = this.holdElsa();
         try {
-          await this.elsa.face(this.princess.chestWorld(), 300);
-          const spell = this.elsa.play('spell');
+          await withTimeout(this.elsa.face(this.princess.chestWorld(), 300), 2000);
+          const spell = withTimeout(this.elsa.play('spell'), 6000);
           await wait(700);
-          await this.engine.magic.beam(this.elsa.handWorld(), this.princess.chestWorld(), this.def.magicColors[0], this.def.magicColors[1], 0.8, 1.4, 1.1);
+          await withTimeout(this.engine.magic.beam(this.elsa.handWorld(), this.princess.chestWorld(), this.def.magicColors[0], this.def.magicColors[1], 0.8, 1.4, 1.1), 4000);
           this.sparkleAround(60);
           chime(CHIME);
           void this.princess.cheer(0.8);
           await spell;
           if (!this.alive) return;
-          await this.elsa.face(this.camera.position, 300);
+          await withTimeout(this.elsa.face(this.camera.position, 300), 2000);
           void this.elsa.wave(1.2);
           if (Math.random() < 0.35) await this.cheer();
         } finally { release(); }
       }
       if (!this.alive) return;
       confetti(80);
-      void this.line('replay_done');
+      void this.bank('replay_done');
       void this.elsa.play('celebrate');
-      await this.princess.twirl(2, 1500);
+      await withTimeout(this.princess.twirl(2, 1500), 5000);
       if (!this.alive) return;
-      await this.princess.curtsy();
+      await withTimeout(this.princess.curtsy(), 6000);
     } finally {
       this.flowRunning = false;
       if (this.alive) { this.princess.idleLife = true; showActions(true, true); }
@@ -522,6 +540,14 @@ export class RoomScene implements GameScene {
 
   update(dt: number): void {
     this.time += dt;
+    // watchdog phòng: không có luồng chơi, không bảng câu hỏi, không nút cuối phòng quá 15 s → chạy lại / hiện nút
+    const nothing = this.alive && !this.flowRunning && els.panel.hidden && els.actions.hidden;
+    this.stuckT = nothing ? this.stuckT + dt : 0;
+    if (this.stuckT > 15) {
+      this.stuckT = 0;
+      console.warn(`[room ${this.def.id}] watchdog: 15 s không có gì để chạm → gỡ kẹt`);
+      void this.restartFlow();
+    }
     this.thinkCooldown -= dt;
     this.princess?.update(dt);
     this.elsa?.update(dt);
@@ -554,10 +580,9 @@ export class RoomScene implements GameScene {
     this.lifeToken++;
     clearFamily();
     this.challenge?.dispose();
-    els.home.removeEventListener('click', this.onHome);
-    els.btnHall.removeEventListener('click', this.onHall);
-    els.btnAgain.removeEventListener('click', this.onAgain);
-    els.say.removeEventListener('click', this.onSay);
+    this.unbind.forEach((f) => f());
+    this.unbind = [];
+    clearTalk();
     showActions(false, false);
     setFrost(0);
     els.debug.hidden = true;

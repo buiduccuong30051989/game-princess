@@ -852,8 +852,7 @@ const room: RoomDef = {
     { word: 'nai', emoji: '🦌', name: 'con nai', fill: { index: 0, distractors: ['p', 'x'] } },
     { word: 'giỏ', emoji: '🧺', name: 'cái giỏ' },
   ],
-  count: { emoji: '🍎', audio: 'snowwhite_count', range: [3, 7] },
-  challenges: ['spell', 'fill', 'count'],
+  challenges: ['spell', 'fill', 'math'],
   magicColors: [0xd62839, 0x1d4ed8],
   audio: { name: 'snowwhite_name', intro: 'snowwhite_intro', thanks: 'snowwhite_thanks' },
 };

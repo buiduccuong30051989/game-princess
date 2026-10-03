@@ -1,5 +1,5 @@
 // Từ vựng phòng → dữ liệu bài tập (token đánh vần + audio key) + kiểm lỗi. Node-safe (không DOM, không three).
-import { spell, defaultAsk, wordId, letterAudio, type SpellToken, type AudioLine } from '../spell.ts';
+import { spell, defaultAsk, wordId, letterNameAudio, type SpellToken, type AudioLine } from '../spell.ts';
 import type { RoomDef, RoomWord } from './types.ts';
 
 export interface WordEntry {
@@ -11,6 +11,8 @@ export interface WordEntry {
   /** letterKeys: chữ → audio key âm của chữ đó (đọc khi bé chạm nhầm) */
   fill?: { index: number; distractors: string[]; letterKeys: Record<string, string> };
   askKey: string;       // ask_<id>
+  /** chữ câu hỏi (phụ đề) */
+  askText: string;
   nameKey: string;      // name_<id>
 }
 
@@ -19,18 +21,18 @@ export function buildWord(w: RoomWord): WordEntry {
   return {
     id: s.id, word: s.word, emoji: w.emoji, name: w.name, tokens: s.tokens,
     fill: w.fill ? { index: w.fill.index, distractors: [...w.fill.distractors], letterKeys: fillLetterKeys(s.word, w.fill) } : undefined,
-    askKey: `ask_${s.id}`, nameKey: `name_${s.id}`,
+    askKey: `ask_${s.id}`, nameKey: `name_${s.id}`, askText: w.ask ?? defaultAsk(w.name),
   };
 }
 
 function fillLetterLines(word: string, fill: { index: number; distractors: readonly string[] }): AudioLine[] {
   const correct = Array.from(word)[fill.index];
-  return [correct, ...fill.distractors].map((ch) => letterAudio(ch)).filter((x): x is AudioLine => !!x);
+  return [correct, ...fill.distractors].map((ch) => letterNameAudio(ch)).filter((x): x is AudioLine => !!x);
 }
 function fillLetterKeys(word: string, fill: { index: number; distractors: readonly string[] }): Record<string, string> {
   const out: Record<string, string> = {};
   const correct = Array.from(word)[fill.index];
-  for (const ch of [correct, ...fill.distractors]) { const a = letterAudio(ch); if (a) out[ch] = a[0]; }
+  for (const ch of [correct, ...fill.distractors]) { const a = letterNameAudio(ch); if (a) out[ch] = a[0]; }
   return out;
 }
 
@@ -56,7 +58,6 @@ export function validateRoom(def: RoomDef): string[] {
   need(def.words.length >= 6, `cần ≥ 6 từ (đang ${def.words.length})`);
   need(def.words.filter((w) => w.fill).length >= 3, 'cần ≥ 3 từ có fill');
   need(def.challenges.length === 3, 'cần đúng 3 bài');
-  need(def.count && def.count.emoji && def.count.audio, 'thiếu count.emoji / count.audio');
   need(def.audio && def.audio.intro && def.audio.thanks && def.audio.name, 'thiếu audio.name/intro/thanks');
   const ids = new Set<string>();
   const emojis = new Set<string>();
@@ -78,7 +79,7 @@ export function validateRoom(def: RoomDef): string[] {
         for (const d of distractors) {
           if (Array.from(d).length !== 1) errs.push(`từ "${w.word}": chữ nhiễu "${d}" phải là 1 ký tự`);
           if (d === correct) errs.push(`từ "${w.word}": chữ nhiễu "${d}" trùng chữ đúng`);
-          if (!letterAudio(d)) errs.push(`từ "${w.word}": chữ nhiễu "${d}" không có âm để đọc`);
+          if (!letterNameAudio(d)) errs.push(`từ "${w.word}": chữ nhiễu "${d}" không có âm để đọc`);
         }
         if (new Set(distractors).size !== distractors.length) errs.push(`từ "${w.word}": 2 chữ nhiễu trùng nhau`);
         const onsetLen = Array.from(s.onset).length;
@@ -86,7 +87,8 @@ export function validateRoom(def: RoomDef): string[] {
       }
     }
   }
-  if (!def.challenges.every((c) => c === 'spell' || c === 'fill' || c === 'count')) errs.push('challenges chỉ nhận spell | fill | count');
+  if (!def.challenges.every((c) => c === 'spell' || c === 'fill' || c === 'math')) errs.push('challenges chỉ nhận spell | fill | math');
+  if (!def.challenges.includes('math')) errs.push('cần 1 bài toán (math)');
   if (def.words.length < 3) errs.push('bài chọn hình cần ≥ 3 từ khác emoji');
   return errs;
 }

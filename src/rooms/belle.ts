@@ -903,8 +903,7 @@ const room: RoomDef = {
     { word: 'gương', emoji: '🪞', name: 'cái gương', fill: { index: 0, distractors: ['p', 'b'] } },
     { word: 'ngựa', emoji: '🐴', name: 'con ngựa' },
   ],
-  count: { emoji: '🌹', audio: 'belle_count', range: [3, 7] },
-  challenges: ['spell', 'fill', 'count'],
+  challenges: ['spell', 'fill', 'math'],
   magicColors: [0xe0a000, 0xd62839],
   audio: { name: 'belle_name', intro: 'belle_intro', thanks: 'belle_thanks' },
 };

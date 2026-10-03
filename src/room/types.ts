@@ -9,7 +9,8 @@ export type RoomId =
   | 'rapunzel' | 'ariel' | 'belle' | 'cinderella' | 'jasmine' | 'snowwhite'
   | 'anna' | 'aurora' | 'mulan' | 'merida' | 'tiana';
 
-export type ChallengeKind = 'spell' | 'fill' | 'count';
+/** spell = nghe – chọn hình, fill = điền chữ thiếu, math = cộng trừ trong 10 (src/math.ts, chủ đề theo phòng). */
+export type ChallengeKind = 'spell' | 'fill' | 'math';
 
 /** 1 từ vựng của phòng. Token đánh vần + audio key được SINH TỰ ĐỘNG từ `word` (src/spell.ts). */
 export interface RoomWord {
@@ -89,13 +90,11 @@ export interface RoomDef {
   buildScene(ctx: RoomCtx): Promise<void> | void;
   /** ≥ 6 từ theo chủ đề phòng, ≥ 3 từ có `fill` */
   words: RoomWord[];
-  /** bài đếm: emoji vật để đếm + audio key câu hỏi đếm */
-  count: { emoji: string; audio: string; range?: [number, number] };
   /** 3 bài theo thứ tự */
   challenges: [ChallengeKind, ChallengeKind, ChallengeKind];
   /** 2 màu hạt phép (đậm, bão hoà – nền sáng dùng NormalBlending) */
   magicColors: [number, number];
-  /** audio key (định nghĩa trong scripts/audio/<id>.txt) */
+  /** audio key: `<id>_name`, `<id>_intro`, `<id>_thanks` (chữ ở ROOM_TEXT trong src/lines.ts) */
   audio: {
     /** "Tòa tháp của Rapunzel!" – đọc khi chạm cửa ở sảnh */
     name: string;

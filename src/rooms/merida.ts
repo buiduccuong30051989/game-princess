@@ -671,8 +671,7 @@ const room: RoomDef = {
     { word: 'lửa', emoji: '🔥', name: 'ngọn lửa', fill: { index: 0, distractors: ['p', 'x'] } },
     { word: 'núi', emoji: '⛰️', name: 'ngọn núi', fill: { index: 0, distractors: ['p', 'đ'] } },
   ],
-  count: { emoji: '🐻', audio: 'merida_count', range: [3, 7] },
-  challenges: ['spell', 'fill', 'count'],
+  challenges: ['spell', 'fill', 'math'],
   magicColors: [0x0f7fd6, 0xea580c],
   audio: { name: 'merida_name', intro: 'merida_intro', thanks: 'merida_thanks' },
 };
